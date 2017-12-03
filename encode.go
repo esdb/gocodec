@@ -8,8 +8,6 @@ import (
 type GocEncoder struct {
 	cfg       *frozenConfig
 	buf       []byte
-	jmpBuf    []byte
-	jmpOffset int
 	Error     error
 }
 

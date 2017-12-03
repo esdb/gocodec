@@ -15,10 +15,12 @@ type API interface {
 
 type ValEncoder interface {
 	Encode(ptr unsafe.Pointer, encoder *GocEncoder)
+	EncodePointers(ptr unsafe.Pointer, ptrOffset int, encoder *GocEncoder)
 }
 
 type ValDecoder interface {
 	Decode(ptr unsafe.Pointer, decoder *GocDecoder)
+	DecodePointers(ptr unsafe.Pointer, decoder *GocDecoder)
 }
 
 type frozenConfig struct {

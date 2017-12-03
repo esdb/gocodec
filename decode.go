@@ -19,7 +19,7 @@ func (decoder *GocDecoder) DecodeVal(objPtr interface{}) {
 	typ := reflect.TypeOf(objPtr)
 	valDecoder, err := decoderOfType(decoder.cfg, typ.Elem())
 	if err != nil {
-		decoder.ReportError("EncodeVal", err)
+		decoder.ReportError("DecodeVal", err)
 		return
 	}
 	valDecoder.Decode(ptrOfEmptyInterface(objPtr), decoder)

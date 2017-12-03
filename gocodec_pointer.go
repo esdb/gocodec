@@ -2,7 +2,6 @@ package gocodec
 
 import (
 	"unsafe"
-	"errors"
 	"reflect"
 )
 
@@ -11,12 +10,13 @@ type pointerEncoder struct {
 }
 
 func (valEncoder *pointerEncoder) Encode(ptr unsafe.Pointer, encoder *GocEncoder) {
-	if encoder.jmpOffset == 0 {
-		encoder.buf = append(encoder.buf, 8, 0, 0, 0, 0, 0, 0, 0)
-		valEncoder.elemEncoder.Encode(ptr, encoder)
-		return
-	}
-	encoder.ReportError("encode pointer", errors.New("encode pointer in struct is not supported"))
+	encoder.buf = append(encoder.buf, 8, 0, 0, 0, 0, 0, 0, 0)
+	valEncoder.EncodePointers(ptr, 0, encoder)
+}
+
+func (valEncoder *pointerEncoder) EncodePointers(ptr unsafe.Pointer, ptrOffset int, encoder *GocEncoder) {
+	// TODO: write offset to buffer
+	valEncoder.elemEncoder.Encode(ptr, encoder)
 }
 
 type pointerDecoder struct {
@@ -24,16 +24,19 @@ type pointerDecoder struct {
 	elemDecoder ValDecoder
 }
 
-func (valDecoder *pointerDecoder) Decode(ptrToPtr unsafe.Pointer, decoder *GocDecoder) {
-	ptr := *(*unsafe.Pointer)(ptrToPtr)
-	if ptr == nil {
-		ptr = ptrOfEmptyInterface(reflect.New(valDecoder.elemType).Interface())
-		*(*unsafe.Pointer)(ptrToPtr) = ptr
-	}
-	b := decoder.buf
-	offset := uint64(b[0]) | uint64(b[1])<<8 | uint64(b[2])<<16 | uint64(b[3])<<24 |
-		uint64(b[4])<<32 | uint64(b[5])<<40 | uint64(b[6])<<48 | uint64(b[7])<<56
-	decoder.buf = b[offset:]
-	valDecoder.elemDecoder.Decode(ptr, decoder)
-	decoder.buf = b
+func (valDecoder *pointerDecoder) Decode(ptr unsafe.Pointer, decoder *GocDecoder) {
+	typedPtr := (*[8]byte)(ptr)
+	copy(typedPtr[:], decoder.buf)
+	valDecoder.DecodePointers(ptr, decoder)
+	decoder.buf = decoder.buf[8:]
+}
+
+func (valDecoder *pointerDecoder) DecodePointers(ptr unsafe.Pointer, decoder *GocDecoder) {
+	offset := *(*int)(ptr)
+	newVal := ptrOfEmptyInterface(reflect.New(valDecoder.elemType).Interface())
+	*(*unsafe.Pointer)(ptr) = newVal
+	oldBuf := decoder.buf
+	decoder.buf = oldBuf[offset:]
+	valDecoder.elemDecoder.Decode(newVal, decoder)
+	decoder.buf = oldBuf
 }

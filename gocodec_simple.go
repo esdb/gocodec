@@ -10,8 +10,13 @@ func (codec *intCodec) Encode(ptr unsafe.Pointer, encoder *GocEncoder) {
 	encoder.buf = append(encoder.buf, (*typedPtr)[:]...)
 }
 
+func (codec *intCodec) EncodePointers(ptr unsafe.Pointer, ptrOffset int, encoder *GocEncoder) {
+}
+
 func (codec *intCodec) Decode(ptr unsafe.Pointer, decoder *GocDecoder) {
-	typedPtr := (*[8]byte)(ptr)
-	copy((*typedPtr)[:], decoder.buf)
-	decoder.buf = decoder.buf[8:]
+	bufPtr := ptrOfSlice(unsafe.Pointer(&decoder.buf))
+	*(*int)(ptr) = *(*int)(bufPtr)
+}
+
+func (codec *intCodec) DecodePointers(ptr unsafe.Pointer, decoder *GocDecoder) {
 }
