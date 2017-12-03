@@ -1,2 +1,3 @@
-# gcodec
-fast encode/decode go language value
+# gocodec
+
+encode/decode go language value without hard effort
