@@ -60,3 +60,9 @@ func (encoder *GocEncoder) EncodeInt32(val int32) {
 	typedPtr := (*[4]byte)(ptr)
 	encoder.buf = append(encoder.buf, (*typedPtr)[:]...)
 }
+
+func (encoder *GocEncoder) EncodeInt64(val int64) {
+	ptr := unsafe.Pointer(&val)
+	typedPtr := (*[8]byte)(ptr)
+	encoder.buf = append(encoder.buf, (*typedPtr)[:]...)
+}
