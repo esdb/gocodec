@@ -5,7 +5,7 @@ import "unsafe"
 type simpleCodec struct {
 }
 
-func (codec *simpleCodec) EncodePointers(ptr unsafe.Pointer, ptrOffset int, encoder *GocEncoder) {
+func (codec *simpleCodec) EncodePointers(ptr unsafe.Pointer, encoder *GocEncoder) {
 }
 
 func (codec *simpleCodec) DecodePointers(ptr unsafe.Pointer, decoder *GocDecoder) {

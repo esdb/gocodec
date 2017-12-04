@@ -102,7 +102,11 @@ func createEncoderOfType(cfg *frozenConfig, typ reflect.Type) (ValEncoder, error
 	case reflect.String:
 		return &stringCodec{}, nil
 	case reflect.Slice:
-		return &sliceEncoder{elemSize: int(typ.Elem().Size())}, nil
+		elemEncoder, err := createEncoderOfType(cfg, typ.Elem())
+		if err != nil {
+			return nil, err
+		}
+		return &sliceEncoder{elemSize: int(typ.Elem().Size()), elemEncoder: elemEncoder}, nil
 	case reflect.Ptr:
 		elemEncoder, err := createEncoderOfType(cfg, typ.Elem())
 		if err != nil {
@@ -140,7 +144,11 @@ func createDecoderOfType(cfg *frozenConfig, typ reflect.Type) (ValDecoder, error
 	case reflect.String:
 		return &stringCodec{}, nil
 	case reflect.Slice:
-		return &sliceDecoder{elemSize: int(typ.Elem().Size())}, nil
+		elemDecoder, err := createDecoderOfType(cfg, typ.Elem())
+		if err != nil {
+			return nil, err
+		}
+		return &sliceDecoder{elemSize: int(typ.Elem().Size()), elemDecoder: elemDecoder}, nil
 	case reflect.Ptr:
 		elemDecoder, err := createDecoderOfType(cfg, typ.Elem())
 		if err != nil {

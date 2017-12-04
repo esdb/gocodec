@@ -8,12 +8,27 @@ import (
 
 type GocEncoder struct {
 	cfg       *frozenConfig
+	// there are two pointers being written to
+	// buf + ptrOffset => the place where the pointer will be updated
+	// buf + len(buf) => the place where actual content of pointer will be appended to
 	buf       []byte
+	ptrOffset uintptr
 	Error     error
 }
 
 func (cfg *frozenConfig) NewGocEncoder(buf []byte) *GocEncoder {
 	return &GocEncoder{cfg: cfg, buf: buf}
+}
+
+func (encoder *GocEncoder) Reset(buf []byte) {
+	encoder.buf = buf
+	encoder.ptrOffset = 0
+}
+
+// buf + ptrOffset
+func (encoder *GocEncoder) ptr() unsafe.Pointer {
+	buf := encoder.buf[encoder.ptrOffset:]
+	return ptrOfSlice(unsafe.Pointer(&buf))
 }
 
 func (encoder *GocEncoder) EncodeVal(val interface{}) {

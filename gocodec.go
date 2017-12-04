@@ -17,7 +17,7 @@ type API interface {
 
 type ValEncoder interface {
 	Encode(ptr unsafe.Pointer, encoder *GocEncoder)
-	EncodePointers(ptr unsafe.Pointer, ptrOffset int, encoder *GocEncoder)
+	EncodePointers(ptr unsafe.Pointer, encoder *GocEncoder)
 }
 
 type ValDecoder interface {

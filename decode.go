@@ -9,11 +9,17 @@ import (
 type GocDecoder struct {
 	cfg   *frozenConfig
 	buf   []byte
+	ptrBuf []byte
 	Error error
 }
 
 func (cfg *frozenConfig) NewGocDecoder(buf []byte) *GocDecoder {
 	return &GocDecoder{cfg: cfg, buf: buf}
+}
+
+func (decoder *GocDecoder) Reset(buf []byte) {
+	decoder.buf = buf
+	decoder.ptrBuf = nil
 }
 
 func (decoder *GocDecoder) DecodeVal(objPtr interface{}) {

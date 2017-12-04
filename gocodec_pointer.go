@@ -11,10 +11,10 @@ type pointerEncoder struct {
 
 func (valEncoder *pointerEncoder) Encode(ptr unsafe.Pointer, encoder *GocEncoder) {
 	encoder.buf = append(encoder.buf, 8, 0, 0, 0, 0, 0, 0, 0)
-	valEncoder.EncodePointers(ptr, 0, encoder)
+	valEncoder.EncodePointers(ptr, encoder)
 }
 
-func (valEncoder *pointerEncoder) EncodePointers(ptr unsafe.Pointer, ptrOffset int, encoder *GocEncoder) {
+func (valEncoder *pointerEncoder) EncodePointers(ptr unsafe.Pointer, encoder *GocEncoder) {
 	// TODO: write offset to buffer
 	valEncoder.elemEncoder.Encode(ptr, encoder)
 }
