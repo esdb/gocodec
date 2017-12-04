@@ -79,6 +79,8 @@ func createEncoderOfType(cfg *frozenConfig, typ reflect.Type) (ValEncoder, error
 	switch typ.Kind() {
 	case reflect.Int:
 		return &intCodec{}, nil
+	case reflect.Int8:
+		return &int8Codec{}, nil
 	case reflect.String:
 		return &stringCodec{}, nil
 	case reflect.Ptr:
@@ -95,6 +97,8 @@ func createDecoderOfType(cfg *frozenConfig, typ reflect.Type) (ValDecoder, error
 	switch typ.Kind() {
 	case reflect.Int:
 		return &intCodec{}, nil
+	case reflect.Int8:
+		return &int8Codec{}, nil
 	case reflect.String:
 		return &stringCodec{}, nil
 	case reflect.Ptr:
