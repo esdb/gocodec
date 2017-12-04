@@ -88,3 +88,16 @@ func (codec *uintCodec) Encode(ptr unsafe.Pointer, encoder *GocEncoder) {
 func (codec *uintCodec) Decode(ptr unsafe.Pointer, decoder *GocDecoder) {
 	*(*uint)(ptr) = decoder.DecodeUint()
 }
+
+type uint8Codec struct {
+	simpleCodec
+}
+
+func (codec *uint8Codec) Encode(ptr unsafe.Pointer, encoder *GocEncoder) {
+	typedPtr := (*[1]byte)(ptr)
+	encoder.buf = append(encoder.buf, (*typedPtr)[:]...)
+}
+
+func (codec *uint8Codec) Decode(ptr unsafe.Pointer, decoder *GocDecoder) {
+	*(*uint8)(ptr) = decoder.DecodeUint8()
+}
