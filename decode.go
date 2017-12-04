@@ -3,6 +3,7 @@ package gocodec
 import (
 	"reflect"
 	"fmt"
+	"unsafe"
 )
 
 type GocDecoder struct {
@@ -30,4 +31,11 @@ func (decoder *GocDecoder) ReportError(operation string, err error) {
 		return
 	}
 	decoder.Error = fmt.Errorf("%s: %s", operation, err)
+}
+
+func (decoder *GocDecoder) DecodeInt() int {
+	bufPtr := ptrOfSlice(unsafe.Pointer(&decoder.buf))
+	val := *(*int)(bufPtr)
+	decoder.buf = decoder.buf[8:]
+	return val
 }

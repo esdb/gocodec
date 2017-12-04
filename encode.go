@@ -3,6 +3,7 @@ package gocodec
 import (
 	"fmt"
 	"reflect"
+	"unsafe"
 )
 
 type GocEncoder struct {
@@ -34,4 +35,10 @@ func (encoder *GocEncoder) ReportError(operation string, err error) {
 		return
 	}
 	encoder.Error = fmt.Errorf("%s: %s", operation, err)
+}
+
+func (encoder *GocEncoder) EncodeInt(val int) {
+	ptr := unsafe.Pointer(&val)
+	typedPtr := (*[8]byte)(ptr)
+	encoder.buf = append(encoder.buf, (*typedPtr)[:]...)
 }

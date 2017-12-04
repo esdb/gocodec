@@ -14,8 +14,7 @@ func (codec *intCodec) EncodePointers(ptr unsafe.Pointer, ptrOffset int, encoder
 }
 
 func (codec *intCodec) Decode(ptr unsafe.Pointer, decoder *GocDecoder) {
-	bufPtr := ptrOfSlice(unsafe.Pointer(&decoder.buf))
-	*(*int)(ptr) = *(*int)(bufPtr)
+	*(*int)(ptr) = decoder.DecodeInt()
 }
 
 func (codec *intCodec) DecodePointers(ptr unsafe.Pointer, decoder *GocDecoder) {

@@ -11,6 +11,8 @@ type Config struct {
 type API interface {
 	Marshal(obj interface{}) ([]byte, error)
 	Unmarshal(buf []byte, objPtr interface{}) error
+	NewGocDecoder(buf []byte) *GocDecoder
+	NewGocEncoder(buf []byte) *GocEncoder
 }
 
 type ValEncoder interface {
