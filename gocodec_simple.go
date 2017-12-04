@@ -127,3 +127,16 @@ func (codec *uint32Codec) Encode(ptr unsafe.Pointer, encoder *GocEncoder) {
 func (codec *uint32Codec) Decode(ptr unsafe.Pointer, decoder *GocDecoder) {
 	*(*uint32)(ptr) = decoder.DecodeUint32()
 }
+
+type uint64Codec struct {
+	simpleCodec
+}
+
+func (codec *uint64Codec) Encode(ptr unsafe.Pointer, encoder *GocEncoder) {
+	typedPtr := (*[8]byte)(ptr)
+	encoder.buf = append(encoder.buf, (*typedPtr)[:]...)
+}
+
+func (codec *uint64Codec) Decode(ptr unsafe.Pointer, decoder *GocDecoder) {
+	*(*uint64)(ptr) = decoder.DecodeUint64()
+}
