@@ -102,3 +102,10 @@ func (decoder *GocDecoder) DecodeUint64() uint64 {
 	decoder.buf = decoder.buf[8:]
 	return val
 }
+
+func (decoder *GocDecoder) DecodeUintptr() uintptr {
+	bufPtr := ptrOfSlice(unsafe.Pointer(&decoder.buf))
+	val := *(*uintptr)(bufPtr)
+	decoder.buf = decoder.buf[8:]
+	return val
+}
