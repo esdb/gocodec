@@ -10,9 +10,9 @@ type stringCodec struct {
 func (codec *stringCodec) Encode(ptr unsafe.Pointer, encoder *GocEncoder) {
 	typedPtr := (*stringHeader)(ptr)
 	encoder.buf = append(encoder.buf, 16, 0, 0, 0, 0, 0, 0, 0)
-	strLen := typedPtr.Len
-	encoder.buf = append(encoder.buf, byte(strLen), byte(strLen)>>8, byte(strLen)>>16, byte(strLen)>>24,
-		byte(strLen)>>32, byte(strLen)>>40, byte(strLen)>>48, byte(strLen)>>56)
+	buf := [8]byte{}
+	*(*int)(unsafe.Pointer(&buf)) = typedPtr.Len
+	encoder.buf = append(encoder.buf, buf[:]...)
 	codec.EncodePointers(ptr, 0, encoder)
 }
 
