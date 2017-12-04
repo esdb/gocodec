@@ -46,3 +46,10 @@ func (decoder *GocDecoder) DecodeInt8() int8 {
 	decoder.buf = decoder.buf[1:]
 	return val
 }
+
+func (decoder *GocDecoder) DecodeInt16() int16 {
+	bufPtr := ptrOfSlice(unsafe.Pointer(&decoder.buf))
+	val := *(*int16)(bufPtr)
+	decoder.buf = decoder.buf[2:]
+	return val
+}
