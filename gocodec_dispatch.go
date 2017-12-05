@@ -110,12 +110,12 @@ func createEncoderOfType(cfg *frozenConfig, typ reflect.Type) (ValEncoder, error
 		var err error
 		for i := 0; i < typ.NumField(); i++ {
 			fields[i].offset = typ.Field(i).Offset
-			fields[i].valEncoder, err = createEncoderOfType(cfg, typ.Field(i).Type)
+			fields[i].encoder, err = createEncoderOfType(cfg, typ.Field(i).Type)
 			if err != nil {
 				return nil, err
 			}
 		}
-		return &structEncoder{structSize: typ.Size(), fields: fields}, nil
+		return &structEncoder{structSize: int(typ.Size()), fields: fields}, nil
 	case reflect.Slice:
 		elemEncoder, err := createEncoderOfType(cfg, typ.Elem())
 		if err != nil {
@@ -163,7 +163,7 @@ func createDecoderOfType(cfg *frozenConfig, typ reflect.Type) (ValDecoder, error
 	case reflect.String:
 		return &stringCodec{}, nil
 	case reflect.Struct:
-		return &structDecoder{}, nil
+		return &structDecoder{structSize: int(typ.Size())}, nil
 	case reflect.Slice:
 		elemDecoder, err := createDecoderOfType(cfg, typ.Elem())
 		if err != nil {
