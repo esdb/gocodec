@@ -33,5 +33,5 @@ func (codec *stringCodec) Decode(ptr unsafe.Pointer, iter *Iterator) {
 func (codec *stringCodec) DecodePointers(ptr unsafe.Pointer, iter *Iterator) {
 	typedPtr := (*stringHeader)(ptr)
 	strDataBuf := iter.ptrBuf[uintptr(typedPtr.Data):]
-	typedPtr.Data = uintptr(ptrOfSlice(unsafe.Pointer(&strDataBuf)))
+	typedPtr.Data = uintptr(unsafe.Pointer(&strDataBuf[0]))
 }

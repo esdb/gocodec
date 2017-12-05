@@ -23,10 +23,6 @@ func ptrOfEmptyInterface(obj interface{}) unsafe.Pointer {
 	return unsafe.Pointer((*emptyInterface)(unsafe.Pointer(&obj)).word)
 }
 
-func ptrOfSlice(slicePtr unsafe.Pointer) unsafe.Pointer {
-	return unsafe.Pointer((*sliceHeader)(slicePtr).Data)
-}
-
 func (header *sliceHeader) DataPtr() unsafe.Pointer {
 	return unsafe.Pointer(header.Data)
 }

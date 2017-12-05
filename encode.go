@@ -29,7 +29,7 @@ func (stream *Stream) Reset(buf []byte) {
 // buf + ptrOffset
 func (stream *Stream) ptr() unsafe.Pointer {
 	buf := stream.buf[stream.ptrOffset:]
-	return ptrOfSlice(unsafe.Pointer(&buf))
+	return unsafe.Pointer(&buf[0])
 }
 
 func (stream *Stream) EncodeVal(val interface{}) {
@@ -50,10 +50,10 @@ func (stream *Stream) EncodeVal(val interface{}) {
 	}
 	encoded := stream.buf[beforeEncodeOffset:]
 	pSizeBuf := stream.buf[beforeEncodeOffset - 8:]
-	pSize := ptrOfSlice(unsafe.Pointer(&pSizeBuf))
+	pSize := unsafe.Pointer(&pSizeBuf[0])
 	*(*uint32)(pSize) = uint32(len(encoded)) + 8
 	pCrcBuf := stream.buf[beforeEncodeOffset - 4:]
-	pCrc := ptrOfSlice(unsafe.Pointer(&pCrcBuf))
+	pCrc := unsafe.Pointer(&pCrcBuf[0])
 	crc := crc32.NewIEEE()
 	crc.Write(encoded)
 	*(*uint32)(pCrc) = crc.Sum32()

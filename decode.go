@@ -31,11 +31,11 @@ func (iter *Iterator) DecodeVal(objPtr interface{}) {
 		iter.ReportError("DecodeVal", err)
 		return
 	}
-	size := *(*uint32)(ptrOfSlice(unsafe.Pointer(&iter.buf)))
+	size := *(*uint32)(unsafe.Pointer(&iter.buf[0]))
 	encoded := iter.buf[8:size]
 	nextBuf := iter.buf[size:]
 	iter.buf = iter.buf[4:]
-	crcVal := *(*uint32)(ptrOfSlice(unsafe.Pointer(&iter.buf)))
+	crcVal := *(*uint32)(unsafe.Pointer(&iter.buf[0]))
 	crc := crc32.NewIEEE()
 	crc.Write(encoded)
 	if crc.Sum32() != crcVal {
@@ -55,91 +55,91 @@ func (iter *Iterator) ReportError(operation string, err error) {
 }
 
 func (iter *Iterator) DecodeInt() int {
-	bufPtr := ptrOfSlice(unsafe.Pointer(&iter.buf))
+	bufPtr := unsafe.Pointer(&iter.buf[0])
 	val := *(*int)(bufPtr)
 	iter.buf = iter.buf[8:]
 	return val
 }
 
 func (iter *Iterator) DecodeInt8() int8 {
-	bufPtr := ptrOfSlice(unsafe.Pointer(&iter.buf))
+	bufPtr := unsafe.Pointer(&iter.buf[0])
 	val := *(*int8)(bufPtr)
 	iter.buf = iter.buf[1:]
 	return val
 }
 
 func (iter *Iterator) DecodeInt16() int16 {
-	bufPtr := ptrOfSlice(unsafe.Pointer(&iter.buf))
+	bufPtr := unsafe.Pointer(&iter.buf[0])
 	val := *(*int16)(bufPtr)
 	iter.buf = iter.buf[2:]
 	return val
 }
 
 func (iter *Iterator) DecodeInt32() int32 {
-	bufPtr := ptrOfSlice(unsafe.Pointer(&iter.buf))
+	bufPtr := unsafe.Pointer(&iter.buf[0])
 	val := *(*int32)(bufPtr)
 	iter.buf = iter.buf[4:]
 	return val
 }
 
 func (iter *Iterator) DecodeInt64() int64 {
-	bufPtr := ptrOfSlice(unsafe.Pointer(&iter.buf))
+	bufPtr := unsafe.Pointer(&iter.buf[0])
 	val := *(*int64)(bufPtr)
 	iter.buf = iter.buf[8:]
 	return val
 }
 
 func (iter *Iterator) DecodeUint() uint {
-	bufPtr := ptrOfSlice(unsafe.Pointer(&iter.buf))
+	bufPtr := unsafe.Pointer(&iter.buf[0])
 	val := *(*uint)(bufPtr)
 	iter.buf = iter.buf[8:]
 	return val
 }
 
 func (iter *Iterator) DecodeUint8() uint8 {
-	bufPtr := ptrOfSlice(unsafe.Pointer(&iter.buf))
+	bufPtr := unsafe.Pointer(&iter.buf[0])
 	val := *(*uint8)(bufPtr)
 	iter.buf = iter.buf[1:]
 	return val
 }
 
 func (iter *Iterator) DecodeUint16() uint16 {
-	bufPtr := ptrOfSlice(unsafe.Pointer(&iter.buf))
+	bufPtr := unsafe.Pointer(&iter.buf[0])
 	val := *(*uint16)(bufPtr)
 	iter.buf = iter.buf[2:]
 	return val
 }
 
 func (iter *Iterator) DecodeUint32() uint32 {
-	bufPtr := ptrOfSlice(unsafe.Pointer(&iter.buf))
+	bufPtr := unsafe.Pointer(&iter.buf[0])
 	val := *(*uint32)(bufPtr)
 	iter.buf = iter.buf[4:]
 	return val
 }
 
 func (iter *Iterator) DecodeUint64() uint64 {
-	bufPtr := ptrOfSlice(unsafe.Pointer(&iter.buf))
+	bufPtr := unsafe.Pointer(&iter.buf[0])
 	val := *(*uint64)(bufPtr)
 	iter.buf = iter.buf[8:]
 	return val
 }
 
 func (iter *Iterator) DecodeUintptr() uintptr {
-	bufPtr := ptrOfSlice(unsafe.Pointer(&iter.buf))
+	bufPtr := unsafe.Pointer(&iter.buf[0])
 	val := *(*uintptr)(bufPtr)
 	iter.buf = iter.buf[8:]
 	return val
 }
 
 func (iter *Iterator) DecodeFloat32() float32 {
-	bufPtr := ptrOfSlice(unsafe.Pointer(&iter.buf))
+	bufPtr := unsafe.Pointer(&iter.buf[0])
 	val := *(*float32)(bufPtr)
 	iter.buf = iter.buf[4:]
 	return val
 }
 
 func (iter *Iterator) DecodeFloat64() float64 {
-	bufPtr := ptrOfSlice(unsafe.Pointer(&iter.buf))
+	bufPtr := unsafe.Pointer(&iter.buf[0])
 	val := *(*float64)(bufPtr)
 	iter.buf = iter.buf[8:]
 	return val

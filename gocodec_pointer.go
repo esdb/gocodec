@@ -35,16 +35,15 @@ func (decoder *pointerDecoder) Decode(ptr unsafe.Pointer, iter *Iterator) {
 }
 
 func (decoder *pointerDecoder) DecodePointers(ptr unsafe.Pointer, iter *Iterator) {
-	ptrBufPtr := unsafe.Pointer(&iter.ptrBuf)
-	offset := *(*uintptr)(ptrOfSlice(ptrBufPtr))
+	offset := *(*uintptr)(unsafe.Pointer(&iter.ptrBuf[0]))
 	if offset == 0 {
 		return
 	}
 	iter.ptrBuf = iter.ptrBuf[offset:]
-	ptrBufPtr = unsafe.Pointer(&iter.ptrBuf)
-	*(*unsafe.Pointer)(ptr) = ptrOfSlice(ptrBufPtr)
+	next := unsafe.Pointer(&iter.ptrBuf[0])
+	*(*unsafe.Pointer)(ptr) = next
 	oldBuf := iter.buf
 	iter.buf = iter.ptrBuf
-	decoder.elemDecoder.Decode(ptrOfSlice(ptrBufPtr), iter)
+	decoder.elemDecoder.Decode(next, iter)
 	iter.buf = oldBuf
 }
