@@ -27,6 +27,7 @@ type pointerDecoder struct {
 func (decoder *pointerDecoder) Decode(ptr unsafe.Pointer, iter *Iterator) {
 	typedPtr := (*[8]byte)(ptr)
 	copy(typedPtr[:], iter.buf)
+	iter.ptrBuf = iter.buf[8:]
 	decoder.DecodePointers(ptr, iter)
 	iter.buf = iter.buf[8:]
 }

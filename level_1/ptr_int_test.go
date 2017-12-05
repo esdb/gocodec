@@ -11,7 +11,7 @@ func Test_ptr_int(t *testing.T) {
 	val := 100
 	encoded, err := gocodec.Marshal(&val)
 	should.Nil(err)
-	should.Equal([]byte{8, 0, 0, 0, 0, 0, 0, 0, 100, 0, 0, 0, 0, 0, 0, 0}, encoded)
+	should.Equal([]byte{0x8, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 100, 0, 0, 0, 0, 0, 0, 0}, encoded)
 	var pVal *int
 	should.Nil(gocodec.Unmarshal(encoded, &pVal))
 	should.Equal(100, *pVal)
