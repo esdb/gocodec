@@ -163,7 +163,16 @@ func createDecoderOfType(cfg *frozenConfig, typ reflect.Type) (ValDecoder, error
 	case reflect.String:
 		return &stringCodec{}, nil
 	case reflect.Struct:
-		return &structDecoder{structSize: int(typ.Size())}, nil
+		fields := make([]structFieldDecoder, typ.NumField())
+		var err error
+		for i := 0; i < typ.NumField(); i++ {
+			fields[i].offset = typ.Field(i).Offset
+			fields[i].decoder, err = createDecoderOfType(cfg, typ.Field(i).Type)
+			if err != nil {
+				return nil, err
+			}
+		}
+		return &structDecoder{structSize: int(typ.Size()), fields: fields}, nil
 	case reflect.Slice:
 		elemDecoder, err := createDecoderOfType(cfg, typ.Elem())
 		if err != nil {

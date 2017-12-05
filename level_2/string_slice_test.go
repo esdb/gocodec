@@ -28,18 +28,18 @@ func Benchmark_string_slice(b *testing.B) {
 	jsonEncoded, _ := jsoniter.Marshal(data)
 	b.Run("goc encode", func(b *testing.B) {
 		b.ReportAllocs()
-		gocEncoder := gocodec.DefaultConfig.NewGocEncoder(nil)
+		stream := gocodec.DefaultConfig.NewStream(nil)
 		for i := 0; i < b.N; i++ {
-			gocEncoder.Reset(gocEncoder.Buffer()[:0])
-			gocEncoder.EncodeVal(data)
+			stream.Reset(stream.Buffer()[:0])
+			stream.EncodeVal(data)
 		}
 	})
 	b.Run("goc decode", func(b *testing.B) {
 		b.ReportAllocs()
-		gocDecoder := gocodec.DefaultConfig.NewGocDecoder(nil)
+		iter := gocodec.DefaultConfig.NewIterator(nil)
 		for i := 0; i < b.N; i++ {
-			gocDecoder.Reset(append(([]byte)(nil), gocEncoded...))
-			gocDecoder.DecodeVal(&data)
+			iter.Reset(append(([]byte)(nil), gocEncoded...))
+			iter.DecodeVal(&data)
 		}
 	})
 	b.Run("json encode", func(b *testing.B) {

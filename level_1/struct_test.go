@@ -2,24 +2,26 @@ package test
 
 import (
 	"testing"
-	"github.com/esdb/gocodec"
 	"github.com/stretchr/testify/require"
+	"github.com/esdb/gocodec"
 )
 
-func Test_simple_struct(t *testing.T) {
+func Test_ptr_in_struct(t *testing.T) {
 	should := require.New(t)
 	type TestObject struct {
-		Field1 int
-		Field2 int
+		Field1 *uint8
+		Field2 *uint8
 	}
-	obj := TestObject{1, 2}
-	encoded, err  :=gocodec.Marshal(obj)
+	one := uint8(1)
+	obj := TestObject{&one, &one}
+	encoded, err := gocodec.Marshal(obj)
 	should.Nil(err)
 	should.Equal([]byte{
-		0x1, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0,
-		0x2, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0,
+		16, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0,
+		9, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0,
+		1,
+		1,
 	}, encoded)
 	var decoded TestObject
 	should.Nil(gocodec.Unmarshal(encoded, &decoded))
-	should.Equal(obj, decoded)
 }

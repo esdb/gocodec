@@ -1,6 +1,8 @@
 package gocodec
 
-import "unsafe"
+import (
+	"unsafe"
+)
 
 type simpleCodec struct {
 }
