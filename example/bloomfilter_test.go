@@ -13,7 +13,7 @@ import (
 
 func Test_bloomfilter(t *testing.T) {
 	should := require.New(t)
-	f := bloom.New(1000 * 1024, 4)
+	f := bloom.New(1000*1024, 4)
 	f.Add([]byte("hello"))
 	f.Add([]byte("world"))
 	should.True(f.Test([]byte("hello")))
@@ -43,7 +43,7 @@ func Test_mmap(t *testing.T) {
 
 func Test_json(t *testing.T) {
 	should := require.New(t)
-	f := bloom.New(1000, 4)
+	f := bloom.New(1000*1024, 4)
 	f.Add([]byte("hello"))
 	f.Add([]byte("world"))
 	encoded, err := jsoniter.Marshal(f)
@@ -57,7 +57,6 @@ func Benchmark(b *testing.B) {
 		b.ReportAllocs()
 		for i := 0; i < b.N; i++ {
 			var f2 bloom.BloomFilter
-			//bytes, _ := ioutil.ReadFile("/tmp/bloomfilter.bin")
 			mem, _ := mmap.Map(f, mmap.COPY, 0)
 			err := gocodec.Unmarshal(mem, &f2)
 			if err != nil {
@@ -67,13 +66,16 @@ func Benchmark(b *testing.B) {
 		}
 	})
 	b.Run("json", func(b *testing.B) {
-		f, _ := os.Open("/tmp/bloomfilter.bin")
+		f, _ := os.Open("/tmp/bloomfilter.json")
 		b.ReportAllocs()
 		for i := 0; i < b.N; i++ {
 			var f2 bloom.BloomFilter
 			//bytes, _ := ioutil.ReadFile("/tmp/bloomfilter.bin")
 			mem, _ := mmap.Map(f, mmap.COPY, 0)
-			jsoniter.Unmarshal(mem, &f2)
+			err := jsoniter.Unmarshal(mem, &f2)
+			if err != nil {
+				b.Error(err)
+			}
 			mem.Unmap()
 		}
 	})
