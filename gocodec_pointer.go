@@ -9,14 +9,14 @@ type pointerEncoder struct {
 	elemEncoder ValEncoder
 }
 
-func (valEncoder *pointerEncoder) Encode(ptr unsafe.Pointer, encoder *GocEncoder) {
-	encoder.buf = append(encoder.buf, 8, 0, 0, 0, 0, 0, 0, 0)
-	valEncoder.EncodePointers(ptr, encoder)
+func (encoder *pointerEncoder) Encode(ptr unsafe.Pointer, stream *Stream) {
+	stream.buf = append(stream.buf, 8, 0, 0, 0, 0, 0, 0, 0)
+	encoder.EncodePointers(ptr, stream)
 }
 
-func (valEncoder *pointerEncoder) EncodePointers(ptr unsafe.Pointer, encoder *GocEncoder) {
+func (encoder *pointerEncoder) EncodePointers(ptr unsafe.Pointer, stream *Stream) {
 	// TODO: write offset to buffer
-	valEncoder.elemEncoder.Encode(ptr, encoder)
+	encoder.elemEncoder.Encode(ptr, stream)
 }
 
 type pointerDecoder struct {
@@ -24,19 +24,19 @@ type pointerDecoder struct {
 	elemDecoder ValDecoder
 }
 
-func (valDecoder *pointerDecoder) Decode(ptr unsafe.Pointer, decoder *GocDecoder) {
+func (decoder *pointerDecoder) Decode(ptr unsafe.Pointer, iter *Iterator) {
 	typedPtr := (*[8]byte)(ptr)
-	copy(typedPtr[:], decoder.buf)
-	valDecoder.DecodePointers(ptr, decoder)
-	decoder.buf = decoder.buf[8:]
+	copy(typedPtr[:], iter.buf)
+	decoder.DecodePointers(ptr, iter)
+	iter.buf = iter.buf[8:]
 }
 
-func (valDecoder *pointerDecoder) DecodePointers(ptr unsafe.Pointer, decoder *GocDecoder) {
+func (decoder *pointerDecoder) DecodePointers(ptr unsafe.Pointer, iter *Iterator) {
 	offset := *(*int)(ptr)
-	newVal := ptrOfEmptyInterface(reflect.New(valDecoder.elemType).Interface())
+	newVal := ptrOfEmptyInterface(reflect.New(decoder.elemType).Interface())
 	*(*unsafe.Pointer)(ptr) = newVal
-	oldBuf := decoder.buf
-	decoder.buf = oldBuf[offset:]
-	valDecoder.elemDecoder.Decode(newVal, decoder)
-	decoder.buf = oldBuf
+	oldBuf := iter.buf
+	iter.buf = oldBuf[offset:]
+	decoder.elemDecoder.Decode(newVal, iter)
+	iter.buf = oldBuf
 }

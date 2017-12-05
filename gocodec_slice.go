@@ -9,33 +9,33 @@ type sliceEncoder struct {
 	elemEncoder ValEncoder
 }
 
-func (valEncoder *sliceEncoder) Encode(ptr unsafe.Pointer, encoder *GocEncoder) {
+func (encoder *sliceEncoder) Encode(ptr unsafe.Pointer, stream *Stream) {
 	typedPtr := (*sliceHeader)(ptr)
-	encoder.buf = append(encoder.buf, 24, 0, 0, 0, 0, 0, 0, 0)
+	stream.buf = append(stream.buf, 24, 0, 0, 0, 0, 0, 0, 0)
 	buf := [8]byte{}
 	*(*int)(unsafe.Pointer(&buf)) = typedPtr.Len
-	encoder.buf = append(encoder.buf, buf[:]...) // Len
-	encoder.buf = append(encoder.buf, buf[:]...) // Cap
-	valEncoder.EncodePointers(ptr, encoder)
+	stream.buf = append(stream.buf, buf[:]...) // Len
+	stream.buf = append(stream.buf, buf[:]...) // Cap
+	encoder.EncodePointers(ptr, stream)
 }
 
-func (valEncoder *sliceEncoder) EncodePointers(ptr unsafe.Pointer, encoder *GocEncoder) {
+func (encoder *sliceEncoder) EncodePointers(ptr unsafe.Pointer, stream *Stream) {
 	// TODO: write offset to buffer
 	typedPtr := (*sliceHeader)(ptr)
-	bytesCount := valEncoder.elemSize * typedPtr.Len
+	bytesCount := encoder.elemSize * typedPtr.Len
 	byteSliceHeader := sliceHeader{
 		Data: typedPtr.Data,
 		Len:  bytesCount,
 		Cap:  bytesCount,
 	}
 	byteSlice := (*[]byte)(unsafe.Pointer(&byteSliceHeader))
-	encoder.ptrOffset = uintptr(len(encoder.buf)) // start of the bytes
-	encoder.buf = append(encoder.buf, *(byteSlice)...)
-	endPtrOffset := uintptr(len(encoder.buf)) // end of the bytes
-	for ; encoder.ptrOffset < endPtrOffset; encoder.ptrOffset += uintptr(valEncoder.elemSize) {
-		// encoder.buf will be changed in the loop, so the pointer will need to updated every time
-		elemPtr := uintptr(ptrOfSlice(unsafe.Pointer(&encoder.buf))) + encoder.ptrOffset
-		valEncoder.elemEncoder.EncodePointers(unsafe.Pointer(elemPtr), encoder)
+	stream.ptrOffset = uintptr(len(stream.buf)) // start of the bytes
+	stream.buf = append(stream.buf, *(byteSlice)...)
+	endPtrOffset := uintptr(len(stream.buf)) // end of the bytes
+	for ; stream.ptrOffset < endPtrOffset; stream.ptrOffset += uintptr(encoder.elemSize) {
+		// stream.buf will be changed in the loop, so the pointer will need to updated every time
+		elemPtr := uintptr(ptrOfSlice(unsafe.Pointer(&stream.buf))) + stream.ptrOffset
+		encoder.elemEncoder.EncodePointers(unsafe.Pointer(elemPtr), stream)
 	}
 }
 
@@ -44,21 +44,21 @@ type sliceDecoder struct {
 	elemDecoder ValDecoder
 }
 
-func (valDecoder *sliceDecoder) Decode(ptr unsafe.Pointer, decoder *GocDecoder) {
+func (decoder *sliceDecoder) Decode(ptr unsafe.Pointer, iter *Iterator) {
 	typedPtr := (*[24]byte)(ptr)
-	copy(typedPtr[:], decoder.buf)
-	decoder.ptrBuf = decoder.buf
-	valDecoder.DecodePointers(ptr, decoder)
-	decoder.buf = decoder.buf[24:]
+	copy(typedPtr[:], iter.buf)
+	iter.ptrBuf = iter.buf
+	decoder.DecodePointers(ptr, iter)
+	iter.buf = iter.buf[24:]
 }
 
-func (valDecoder *sliceDecoder) DecodePointers(ptr unsafe.Pointer, decoder *GocDecoder) {
+func (decoder *sliceDecoder) DecodePointers(ptr unsafe.Pointer, iter *Iterator) {
 	typedPtr := (*sliceHeader)(ptr)
-	sliceDataBuf := decoder.ptrBuf[uintptr(typedPtr.Data):]
+	sliceDataBuf := iter.ptrBuf[uintptr(typedPtr.Data):]
 	typedPtr.Data = uintptr(ptrOfSlice(unsafe.Pointer(&sliceDataBuf)))
-	decoder.ptrBuf = sliceDataBuf
+	iter.ptrBuf = sliceDataBuf
 	for i := 0; i < typedPtr.Len; i++ {
-		valDecoder.elemDecoder.DecodePointers(ptrOfSlice(unsafe.Pointer(&decoder.ptrBuf)), decoder)
-		decoder.ptrBuf = decoder.ptrBuf[valDecoder.elemSize:]
+		decoder.elemDecoder.DecodePointers(ptrOfSlice(unsafe.Pointer(&iter.ptrBuf)), iter)
+		iter.ptrBuf = iter.ptrBuf[decoder.elemSize:]
 	}
 }

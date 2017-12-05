@@ -11,18 +11,18 @@ type Config struct {
 type API interface {
 	Marshal(obj interface{}) ([]byte, error)
 	Unmarshal(buf []byte, objPtr interface{}) error
-	NewGocDecoder(buf []byte) *GocDecoder
-	NewGocEncoder(buf []byte) *GocEncoder
+	NewIterator(buf []byte) *Iterator
+	NewStream(buf []byte) *Stream
 }
 
 type ValEncoder interface {
-	Encode(ptr unsafe.Pointer, encoder *GocEncoder)
-	EncodePointers(ptr unsafe.Pointer, encoder *GocEncoder)
+	Encode(ptr unsafe.Pointer, stream *Stream)
+	EncodePointers(ptr unsafe.Pointer, stream *Stream)
 }
 
 type ValDecoder interface {
-	Decode(ptr unsafe.Pointer, decoder *GocDecoder)
-	DecodePointers(ptr unsafe.Pointer, decoder *GocDecoder)
+	Decode(ptr unsafe.Pointer, iter *Iterator)
+	DecodePointers(ptr unsafe.Pointer, iter *Iterator)
 }
 
 type frozenConfig struct {
@@ -48,13 +48,13 @@ func Unmarshal(buf []byte, objPtr interface{}) error {
 }
 
 func (cfg *frozenConfig) Marshal(obj interface{}) ([]byte, error) {
-	encoder := cfg.NewGocEncoder(nil)
-	encoder.EncodeVal(obj)
-	return encoder.Buffer(), encoder.Error
+	stream := cfg.NewStream(nil)
+	stream.EncodeVal(obj)
+	return stream.Buffer(), stream.Error
 }
 
 func (cfg *frozenConfig) Unmarshal(buf []byte, objPtr interface{}) error {
-	decoder := cfg.NewGocDecoder(buf)
-	decoder.DecodeVal(objPtr)
-	return decoder.Error
+	iter := cfg.NewIterator(buf)
+	iter.DecodeVal(objPtr)
+	return iter.Error
 }

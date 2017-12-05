@@ -6,7 +6,7 @@ import (
 	"unsafe"
 )
 
-type GocEncoder struct {
+type Stream struct {
 	cfg       *frozenConfig
 	// there are two pointers being written to
 	// buf + ptrOffset => the place where the pointer will be updated
@@ -16,116 +16,116 @@ type GocEncoder struct {
 	Error     error
 }
 
-func (cfg *frozenConfig) NewGocEncoder(buf []byte) *GocEncoder {
-	return &GocEncoder{cfg: cfg, buf: buf}
+func (cfg *frozenConfig) NewStream(buf []byte) *Stream {
+	return &Stream{cfg: cfg, buf: buf}
 }
 
-func (encoder *GocEncoder) Reset(buf []byte) {
-	encoder.buf = buf
-	encoder.ptrOffset = 0
+func (stream *Stream) Reset(buf []byte) {
+	stream.buf = buf
+	stream.ptrOffset = 0
 }
 
 // buf + ptrOffset
-func (encoder *GocEncoder) ptr() unsafe.Pointer {
-	buf := encoder.buf[encoder.ptrOffset:]
+func (stream *Stream) ptr() unsafe.Pointer {
+	buf := stream.buf[stream.ptrOffset:]
 	return ptrOfSlice(unsafe.Pointer(&buf))
 }
 
-func (encoder *GocEncoder) EncodeVal(val interface{}) {
+func (stream *Stream) EncodeVal(val interface{}) {
 	typ := reflect.TypeOf(val)
-	valEncoder, err := encoderOfType(encoder.cfg, typ)
+	encoder, err := encoderOfType(stream.cfg, typ)
 	if err != nil {
-		encoder.ReportError("EncodeVal", err)
+		stream.ReportError("EncodeVal", err)
 		return
 	}
-	valEncoder.Encode(ptrOfEmptyInterface(val), encoder)
+	encoder.Encode(ptrOfEmptyInterface(val), stream)
 }
 
-func (encoder *GocEncoder) Buffer() []byte {
-	return encoder.buf
+func (stream *Stream) Buffer() []byte {
+	return stream.buf
 }
 
-func (encoder *GocEncoder) ReportError(operation string, err error) {
-	if encoder.Error != nil {
+func (stream *Stream) ReportError(operation string, err error) {
+	if stream.Error != nil {
 		return
 	}
-	encoder.Error = fmt.Errorf("%s: %s", operation, err)
+	stream.Error = fmt.Errorf("%s: %s", operation, err)
 }
 
-func (encoder *GocEncoder) EncodeInt(val int) {
+func (stream *Stream) EncodeInt(val int) {
 	ptr := unsafe.Pointer(&val)
 	typedPtr := (*[8]byte)(ptr)
-	encoder.buf = append(encoder.buf, (*typedPtr)[:]...)
+	stream.buf = append(stream.buf, (*typedPtr)[:]...)
 }
 
-func (encoder *GocEncoder) EncodeInt8(val int8) {
+func (stream *Stream) EncodeInt8(val int8) {
 	ptr := unsafe.Pointer(&val)
 	typedPtr := (*[1]byte)(ptr)
-	encoder.buf = append(encoder.buf, (*typedPtr)[:]...)
+	stream.buf = append(stream.buf, (*typedPtr)[:]...)
 }
 
-func (encoder *GocEncoder) EncodeInt16(val int16) {
+func (stream *Stream) EncodeInt16(val int16) {
 	ptr := unsafe.Pointer(&val)
 	typedPtr := (*[2]byte)(ptr)
-	encoder.buf = append(encoder.buf, (*typedPtr)[:]...)
+	stream.buf = append(stream.buf, (*typedPtr)[:]...)
 }
 
-func (encoder *GocEncoder) EncodeInt32(val int32) {
+func (stream *Stream) EncodeInt32(val int32) {
 	ptr := unsafe.Pointer(&val)
 	typedPtr := (*[4]byte)(ptr)
-	encoder.buf = append(encoder.buf, (*typedPtr)[:]...)
+	stream.buf = append(stream.buf, (*typedPtr)[:]...)
 }
 
-func (encoder *GocEncoder) EncodeInt64(val int64) {
+func (stream *Stream) EncodeInt64(val int64) {
 	ptr := unsafe.Pointer(&val)
 	typedPtr := (*[8]byte)(ptr)
-	encoder.buf = append(encoder.buf, (*typedPtr)[:]...)
+	stream.buf = append(stream.buf, (*typedPtr)[:]...)
 }
 
-func (encoder *GocEncoder) EncodeUint(val uint) {
+func (stream *Stream) EncodeUint(val uint) {
 	ptr := unsafe.Pointer(&val)
 	typedPtr := (*[8]byte)(ptr)
-	encoder.buf = append(encoder.buf, (*typedPtr)[:]...)
+	stream.buf = append(stream.buf, (*typedPtr)[:]...)
 }
 
-func (encoder *GocEncoder) EncodeUint8(val uint8) {
+func (stream *Stream) EncodeUint8(val uint8) {
 	ptr := unsafe.Pointer(&val)
 	typedPtr := (*[1]byte)(ptr)
-	encoder.buf = append(encoder.buf, (*typedPtr)[:]...)
+	stream.buf = append(stream.buf, (*typedPtr)[:]...)
 }
 
-func (encoder *GocEncoder) EncodeUint16(val uint16) {
+func (stream *Stream) EncodeUint16(val uint16) {
 	ptr := unsafe.Pointer(&val)
 	typedPtr := (*[2]byte)(ptr)
-	encoder.buf = append(encoder.buf, (*typedPtr)[:]...)
+	stream.buf = append(stream.buf, (*typedPtr)[:]...)
 }
 
-func (encoder *GocEncoder) EncodeUint32(val uint32) {
+func (stream *Stream) EncodeUint32(val uint32) {
 	ptr := unsafe.Pointer(&val)
 	typedPtr := (*[4]byte)(ptr)
-	encoder.buf = append(encoder.buf, (*typedPtr)[:]...)
+	stream.buf = append(stream.buf, (*typedPtr)[:]...)
 }
 
-func (encoder *GocEncoder) EncodeUint64(val uint64) {
+func (stream *Stream) EncodeUint64(val uint64) {
 	ptr := unsafe.Pointer(&val)
 	typedPtr := (*[8]byte)(ptr)
-	encoder.buf = append(encoder.buf, (*typedPtr)[:]...)
+	stream.buf = append(stream.buf, (*typedPtr)[:]...)
 }
 
-func (encoder *GocEncoder) EncodeUintptr(val uintptr) {
+func (stream *Stream) EncodeUintptr(val uintptr) {
 	ptr := unsafe.Pointer(&val)
 	typedPtr := (*[8]byte)(ptr)
-	encoder.buf = append(encoder.buf, (*typedPtr)[:]...)
+	stream.buf = append(stream.buf, (*typedPtr)[:]...)
 }
 
-func (encoder *GocEncoder) EncodeFloat32(val float32) {
+func (stream *Stream) EncodeFloat32(val float32) {
 	ptr := unsafe.Pointer(&val)
 	typedPtr := (*[4]byte)(ptr)
-	encoder.buf = append(encoder.buf, (*typedPtr)[:]...)
+	stream.buf = append(stream.buf, (*typedPtr)[:]...)
 }
 
-func (encoder *GocEncoder) EncodeFloat64(val float64) {
+func (stream *Stream) EncodeFloat64(val float64) {
 	ptr := unsafe.Pointer(&val)
 	typedPtr := (*[8]byte)(ptr)
-	encoder.buf = append(encoder.buf, (*typedPtr)[:]...)
+	stream.buf = append(stream.buf, (*typedPtr)[:]...)
 }

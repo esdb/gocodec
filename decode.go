@@ -6,126 +6,126 @@ import (
 	"unsafe"
 )
 
-type GocDecoder struct {
+type Iterator struct {
 	cfg   *frozenConfig
 	buf   []byte
 	ptrBuf []byte
 	Error error
 }
 
-func (cfg *frozenConfig) NewGocDecoder(buf []byte) *GocDecoder {
-	return &GocDecoder{cfg: cfg, buf: buf}
+func (cfg *frozenConfig) NewIterator(buf []byte) *Iterator {
+	return &Iterator{cfg: cfg, buf: buf}
 }
 
-func (decoder *GocDecoder) Reset(buf []byte) {
-	decoder.buf = buf
-	decoder.ptrBuf = nil
+func (iter *Iterator) Reset(buf []byte) {
+	iter.buf = buf
+	iter.ptrBuf = nil
 }
 
-func (decoder *GocDecoder) DecodeVal(objPtr interface{}) {
+func (iter *Iterator) DecodeVal(objPtr interface{}) {
 	typ := reflect.TypeOf(objPtr)
-	valDecoder, err := decoderOfType(decoder.cfg, typ.Elem())
+	decoder, err := decoderOfType(iter.cfg, typ.Elem())
 	if err != nil {
-		decoder.ReportError("DecodeVal", err)
+		iter.ReportError("DecodeVal", err)
 		return
 	}
-	valDecoder.Decode(ptrOfEmptyInterface(objPtr), decoder)
+	decoder.Decode(ptrOfEmptyInterface(objPtr), iter)
 }
 
-func (decoder *GocDecoder) ReportError(operation string, err error) {
-	if decoder.Error != nil {
+func (iter *Iterator) ReportError(operation string, err error) {
+	if iter.Error != nil {
 		return
 	}
-	decoder.Error = fmt.Errorf("%s: %s", operation, err)
+	iter.Error = fmt.Errorf("%s: %s", operation, err)
 }
 
-func (decoder *GocDecoder) DecodeInt() int {
-	bufPtr := ptrOfSlice(unsafe.Pointer(&decoder.buf))
+func (iter *Iterator) DecodeInt() int {
+	bufPtr := ptrOfSlice(unsafe.Pointer(&iter.buf))
 	val := *(*int)(bufPtr)
-	decoder.buf = decoder.buf[8:]
+	iter.buf = iter.buf[8:]
 	return val
 }
 
-func (decoder *GocDecoder) DecodeInt8() int8 {
-	bufPtr := ptrOfSlice(unsafe.Pointer(&decoder.buf))
+func (iter *Iterator) DecodeInt8() int8 {
+	bufPtr := ptrOfSlice(unsafe.Pointer(&iter.buf))
 	val := *(*int8)(bufPtr)
-	decoder.buf = decoder.buf[1:]
+	iter.buf = iter.buf[1:]
 	return val
 }
 
-func (decoder *GocDecoder) DecodeInt16() int16 {
-	bufPtr := ptrOfSlice(unsafe.Pointer(&decoder.buf))
+func (iter *Iterator) DecodeInt16() int16 {
+	bufPtr := ptrOfSlice(unsafe.Pointer(&iter.buf))
 	val := *(*int16)(bufPtr)
-	decoder.buf = decoder.buf[2:]
+	iter.buf = iter.buf[2:]
 	return val
 }
 
-func (decoder *GocDecoder) DecodeInt32() int32 {
-	bufPtr := ptrOfSlice(unsafe.Pointer(&decoder.buf))
+func (iter *Iterator) DecodeInt32() int32 {
+	bufPtr := ptrOfSlice(unsafe.Pointer(&iter.buf))
 	val := *(*int32)(bufPtr)
-	decoder.buf = decoder.buf[4:]
+	iter.buf = iter.buf[4:]
 	return val
 }
 
-func (decoder *GocDecoder) DecodeInt64() int64 {
-	bufPtr := ptrOfSlice(unsafe.Pointer(&decoder.buf))
+func (iter *Iterator) DecodeInt64() int64 {
+	bufPtr := ptrOfSlice(unsafe.Pointer(&iter.buf))
 	val := *(*int64)(bufPtr)
-	decoder.buf = decoder.buf[8:]
+	iter.buf = iter.buf[8:]
 	return val
 }
 
-func (decoder *GocDecoder) DecodeUint() uint {
-	bufPtr := ptrOfSlice(unsafe.Pointer(&decoder.buf))
+func (iter *Iterator) DecodeUint() uint {
+	bufPtr := ptrOfSlice(unsafe.Pointer(&iter.buf))
 	val := *(*uint)(bufPtr)
-	decoder.buf = decoder.buf[8:]
+	iter.buf = iter.buf[8:]
 	return val
 }
 
-func (decoder *GocDecoder) DecodeUint8() uint8 {
-	bufPtr := ptrOfSlice(unsafe.Pointer(&decoder.buf))
+func (iter *Iterator) DecodeUint8() uint8 {
+	bufPtr := ptrOfSlice(unsafe.Pointer(&iter.buf))
 	val := *(*uint8)(bufPtr)
-	decoder.buf = decoder.buf[1:]
+	iter.buf = iter.buf[1:]
 	return val
 }
 
-func (decoder *GocDecoder) DecodeUint16() uint16 {
-	bufPtr := ptrOfSlice(unsafe.Pointer(&decoder.buf))
+func (iter *Iterator) DecodeUint16() uint16 {
+	bufPtr := ptrOfSlice(unsafe.Pointer(&iter.buf))
 	val := *(*uint16)(bufPtr)
-	decoder.buf = decoder.buf[2:]
+	iter.buf = iter.buf[2:]
 	return val
 }
 
-func (decoder *GocDecoder) DecodeUint32() uint32 {
-	bufPtr := ptrOfSlice(unsafe.Pointer(&decoder.buf))
+func (iter *Iterator) DecodeUint32() uint32 {
+	bufPtr := ptrOfSlice(unsafe.Pointer(&iter.buf))
 	val := *(*uint32)(bufPtr)
-	decoder.buf = decoder.buf[4:]
+	iter.buf = iter.buf[4:]
 	return val
 }
 
-func (decoder *GocDecoder) DecodeUint64() uint64 {
-	bufPtr := ptrOfSlice(unsafe.Pointer(&decoder.buf))
+func (iter *Iterator) DecodeUint64() uint64 {
+	bufPtr := ptrOfSlice(unsafe.Pointer(&iter.buf))
 	val := *(*uint64)(bufPtr)
-	decoder.buf = decoder.buf[8:]
+	iter.buf = iter.buf[8:]
 	return val
 }
 
-func (decoder *GocDecoder) DecodeUintptr() uintptr {
-	bufPtr := ptrOfSlice(unsafe.Pointer(&decoder.buf))
+func (iter *Iterator) DecodeUintptr() uintptr {
+	bufPtr := ptrOfSlice(unsafe.Pointer(&iter.buf))
 	val := *(*uintptr)(bufPtr)
-	decoder.buf = decoder.buf[8:]
+	iter.buf = iter.buf[8:]
 	return val
 }
 
-func (decoder *GocDecoder) DecodeFloat32() float32 {
-	bufPtr := ptrOfSlice(unsafe.Pointer(&decoder.buf))
+func (iter *Iterator) DecodeFloat32() float32 {
+	bufPtr := ptrOfSlice(unsafe.Pointer(&iter.buf))
 	val := *(*float32)(bufPtr)
-	decoder.buf = decoder.buf[4:]
+	iter.buf = iter.buf[4:]
 	return val
 }
 
-func (decoder *GocDecoder) DecodeFloat64() float64 {
-	bufPtr := ptrOfSlice(unsafe.Pointer(&decoder.buf))
+func (iter *Iterator) DecodeFloat64() float64 {
+	bufPtr := ptrOfSlice(unsafe.Pointer(&iter.buf))
 	val := *(*float64)(bufPtr)
-	decoder.buf = decoder.buf[8:]
+	iter.buf = iter.buf[8:]
 	return val
 }
