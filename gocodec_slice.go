@@ -11,6 +11,7 @@ type sliceEncoder struct {
 
 func (encoder *sliceEncoder) Encode(ptr unsafe.Pointer, stream *Stream) {
 	typedPtr := (*sliceHeader)(ptr)
+	stream.ptrOffset = uintptr(len(stream.buf))
 	stream.buf = append(stream.buf, 24, 0, 0, 0, 0, 0, 0, 0)
 	buf := [8]byte{}
 	*(*int)(unsafe.Pointer(&buf)) = typedPtr.Len
@@ -29,6 +30,7 @@ func (encoder *sliceEncoder) EncodePointers(ptr unsafe.Pointer, stream *Stream) 
 		Cap:  bytesCount,
 	}
 	byteSlice := (*[]byte)(unsafe.Pointer(&byteSliceHeader))
+	*(*uintptr)(stream.ptr()) = uintptr(len(stream.buf)) - stream.ptrOffset
 	stream.ptrOffset = uintptr(len(stream.buf)) // start of the bytes
 	stream.buf = append(stream.buf, *(byteSlice)...)
 	endPtrOffset := uintptr(len(stream.buf)) // end of the bytes
@@ -57,7 +59,9 @@ func (decoder *sliceDecoder) DecodePointers(ptr unsafe.Pointer, iter *Iterator) 
 	typedPtr.Data = uintptr(ptrOfSlice(unsafe.Pointer(&sliceDataBuf)))
 	iter.ptrBuf = sliceDataBuf
 	for i := 0; i < typedPtr.Len; i++ {
+		if i > 0 {
+			iter.ptrBuf = iter.ptrBuf[decoder.elemSize:]
+		}
 		decoder.elemDecoder.DecodePointers(ptrOfSlice(unsafe.Pointer(&iter.ptrBuf)), iter)
-		iter.ptrBuf = iter.ptrBuf[decoder.elemSize:]
 	}
 }
