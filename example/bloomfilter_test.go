@@ -14,7 +14,7 @@ func Test_bloomfilter(t *testing.T) {
 	f.Add([]byte("world"))
 	should.True(f.Test([]byte("hello")))
 	should.False(f.Test([]byte("hi")))
-	encoded, err := gocodec.Marshal(f)
+	encoded, err := gocodec.Marshal(*f)
 	should.Nil(err)
 	should.NotNil(encoded)
 	var f2 bloom.BloomFilter
@@ -22,4 +22,3 @@ func Test_bloomfilter(t *testing.T) {
 	should.True(f2.Test([]byte("hello")))
 	should.False(f2.Test([]byte("hi")))
 }
-
