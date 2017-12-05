@@ -47,7 +47,6 @@ func (decoder *structDecoder) Decode(ptr unsafe.Pointer, iter *Iterator) {
 	copy(*(*[]byte)(slicePtr), iter.buf)
 	iter.ptrBuf = iter.buf
 	decoder.DecodePointers(ptr, iter)
-	iter.buf = iter.buf[decoder.structSize:]
 }
 
 func (decoder *structDecoder) DecodePointers(ptr unsafe.Pointer, iter *Iterator) {

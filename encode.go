@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"reflect"
 	"unsafe"
+	"hash/crc32"
 )
 
 type Stream struct {
@@ -38,7 +39,24 @@ func (stream *Stream) EncodeVal(val interface{}) {
 		stream.ReportError("EncodeVal", err)
 		return
 	}
+	stream.buf = append(stream.buf, []byte{
+		0, 0, 0, 0, // size
+		0, 0, 0, 0, // crc32
+		}...)
+	beforeEncodeOffset := len(stream.buf)
 	encoder.Encode(ptrOfEmptyInterface(val), stream)
+	if stream.Error != nil {
+		return
+	}
+	encoded := stream.buf[beforeEncodeOffset:]
+	pSizeBuf := stream.buf[beforeEncodeOffset - 8:]
+	pSize := ptrOfSlice(unsafe.Pointer(&pSizeBuf))
+	*(*uint32)(pSize) = uint32(len(encoded)) + 8
+	pCrcBuf := stream.buf[beforeEncodeOffset - 4:]
+	pCrc := ptrOfSlice(unsafe.Pointer(&pCrcBuf))
+	crc := crc32.NewIEEE()
+	crc.Write(encoded)
+	*(*uint32)(pCrc) = crc.Sum32()
 }
 
 func (stream *Stream) Buffer() []byte {

@@ -4,13 +4,15 @@ import (
 	"reflect"
 	"fmt"
 	"unsafe"
+	"hash/crc32"
+	"errors"
 )
 
 type Iterator struct {
-	cfg   *frozenConfig
-	buf   []byte
+	cfg    *frozenConfig
+	buf    []byte
 	ptrBuf []byte
-	Error error
+	Error  error
 }
 
 func (cfg *frozenConfig) NewIterator(buf []byte) *Iterator {
@@ -29,7 +31,20 @@ func (iter *Iterator) DecodeVal(objPtr interface{}) {
 		iter.ReportError("DecodeVal", err)
 		return
 	}
+	size := *(*uint32)(ptrOfSlice(unsafe.Pointer(&iter.buf)))
+	encoded := iter.buf[8:size]
+	nextBuf := iter.buf[size:]
+	iter.buf = iter.buf[4:]
+	crcVal := *(*uint32)(ptrOfSlice(unsafe.Pointer(&iter.buf)))
+	crc := crc32.NewIEEE()
+	crc.Write(encoded)
+	if crc.Sum32() != crcVal {
+		iter.ReportError("DecodeVal", errors.New("crc32 verification failed"))
+		return
+	}
+	iter.buf = iter.buf[4:]
 	decoder.Decode(ptrOfEmptyInterface(objPtr), iter)
+	iter.buf = nextBuf
 }
 
 func (iter *Iterator) ReportError(operation string, err error) {

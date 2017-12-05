@@ -14,7 +14,7 @@ func Test_int_slice(t *testing.T) {
 		24, 0, 0, 0, 0, 0, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0,
 		1, 0, 0, 0, 0, 0, 0, 0,
 		2, 0, 0, 0, 0, 0, 0, 0,
-		3, 0, 0, 0, 0, 0, 0, 0}, encoded)
+		3, 0, 0, 0, 0, 0, 0, 0}, encoded[8:])
 	var val []int
 	should.Nil(gocodec.Unmarshal(encoded, &val))
 	should.Equal([]int{1, 2, 3}, val)

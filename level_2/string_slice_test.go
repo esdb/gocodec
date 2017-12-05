@@ -16,7 +16,7 @@ func Test_string_slice(t *testing.T) {
 		24, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, // sliceHeader
 		32, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0,                         // string header
 		17, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0,                         // string header
-		'h', 'i'}, encoded)
+		'h', 'i'}, encoded[8:])
 	var val []string
 	should.Nil(gocodec.Unmarshal(encoded, &val))
 	should.Equal([]string{"h", "i"}, val)

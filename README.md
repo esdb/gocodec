@@ -1,3 +1,3 @@
 # gocodec
 
-encode/decode go language value without hard effort
+inplace decoding go language value, read data off memory mapped file without copying or allocation.

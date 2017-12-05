@@ -49,7 +49,6 @@ func (decoder *sliceDecoder) Decode(ptr unsafe.Pointer, iter *Iterator) {
 	copy(typedPtr[:], iter.buf)
 	iter.ptrBuf = iter.buf
 	decoder.DecodePointers(ptr, iter)
-	iter.buf = iter.buf[24:]
 }
 
 func (decoder *sliceDecoder) DecodePointers(ptr unsafe.Pointer, iter *Iterator) {

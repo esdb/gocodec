@@ -18,7 +18,7 @@ func Test_single_ptr_in_struct(t *testing.T) {
 	should.Equal([]byte{
 		0x8, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0,
 		0x1,
-	}, encoded)
+	}, encoded[8:])
 	var decoded TestObject
 	should.Nil(gocodec.Unmarshal(encoded, &decoded))
 	should.Equal(obj, decoded)
@@ -39,7 +39,7 @@ func Test_two_ptrs_in_struct(t *testing.T) {
 		9, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0,
 		1,
 		1,
-	}, encoded)
+	}, encoded[8:])
 	var decoded TestObject
 	should.Nil(gocodec.Unmarshal(encoded, &decoded))
 	should.Equal(obj, decoded)

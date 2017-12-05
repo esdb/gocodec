@@ -29,7 +29,6 @@ func (decoder *pointerDecoder) Decode(ptr unsafe.Pointer, iter *Iterator) {
 	copy(typedPtr[:], iter.buf)
 	iter.ptrBuf = iter.buf[8:]
 	decoder.DecodePointers(ptr, iter)
-	iter.buf = iter.buf[8:]
 }
 
 func (decoder *pointerDecoder) DecodePointers(ptr unsafe.Pointer, iter *Iterator) {
