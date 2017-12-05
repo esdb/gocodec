@@ -115,7 +115,11 @@ func createEncoderOfType(cfg *frozenConfig, typ reflect.Type) (ValEncoder, error
 				return nil, err
 			}
 		}
-		return &structEncoder{structSize: int(typ.Size()), fields: fields}, nil
+		encoder := &structEncoder{structSize: int(typ.Size()), fields: fields}
+		if len(fields) == 1 && typ.Field(0).Type.Kind() == reflect.Ptr {
+			return &singlePointerFix{encoder:encoder}, nil
+		}
+		return encoder, nil
 	case reflect.Slice:
 		elemEncoder, err := createEncoderOfType(cfg, typ.Elem())
 		if err != nil {
