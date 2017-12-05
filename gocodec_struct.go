@@ -9,6 +9,11 @@ type structEncoder struct {
 	fields     []structFieldEncoder
 }
 
+type structFieldEncoder struct {
+	offset  uintptr
+	encoder ValEncoder
+}
+
 func (encoder *structEncoder) Encode(ptr unsafe.Pointer, stream *Stream) {
 	slice := sliceHeader{Data: uintptr(ptr), Len: encoder.structSize, Cap: encoder.structSize}
 	slicePtr := unsafe.Pointer(&slice)
@@ -26,17 +31,14 @@ func (encoder *structEncoder) EncodePointers(ptr unsafe.Pointer, stream *Stream)
 	}
 }
 
-type structFieldEncoder struct {
-	offset  uintptr
-	encoder ValEncoder
-}
-
-func (encoder *structFieldEncoder) encode(ptr unsafe.Pointer, stream *Stream) {
-}
-
 type structDecoder struct {
 	structSize int
 	fields     []structFieldDecoder
+}
+
+type structFieldDecoder struct {
+	offset  uintptr
+	decoder ValDecoder
 }
 
 func (decoder *structDecoder) Decode(ptr unsafe.Pointer, iter *Iterator) {
@@ -56,9 +58,4 @@ func (decoder *structDecoder) DecodePointers(ptr unsafe.Pointer, iter *Iterator)
 		iter.ptrBuf = basePtrBuf[field.offset+ptrDataOffset:]
 		field.decoder.DecodePointers(fieldPtr, iter)
 	}
-}
-
-type structFieldDecoder struct {
-	offset  uintptr
-	decoder ValDecoder
 }
