@@ -101,6 +101,8 @@ func createEncoderOfType(cfg *frozenConfig, typ reflect.Type) (ValEncoder, error
 		return &uintptrCodec{}, nil
 	case reflect.Float32:
 		return &float32Codec{}, nil
+	case reflect.Float64:
+		return &float64Codec{}, nil
 	case reflect.String:
 		return &stringCodec{}, nil
 	case reflect.Slice:
@@ -145,6 +147,8 @@ func createDecoderOfType(cfg *frozenConfig, typ reflect.Type) (ValDecoder, error
 		return &uintptrCodec{}, nil
 	case reflect.Float32:
 		return &float32Codec{}, nil
+	case reflect.Float64:
+		return &float64Codec{}, nil
 	case reflect.String:
 		return &stringCodec{}, nil
 	case reflect.Slice:
