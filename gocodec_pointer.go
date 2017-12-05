@@ -15,8 +15,11 @@ func (encoder *pointerEncoder) Encode(ptr unsafe.Pointer, stream *Stream) {
 }
 
 func (encoder *pointerEncoder) EncodePointers(ptr unsafe.Pointer, stream *Stream) {
-	*(*uintptr)(stream.ptr()) = uintptr(len(stream.buf)) - stream.ptrOffset
-	encoder.elemEncoder.Encode(*(*unsafe.Pointer)(ptr), stream)
+	dataPtr := *(*unsafe.Pointer)(ptr)
+	if dataPtr != nil {
+		*(*uintptr)(stream.ptr()) = uintptr(len(stream.buf)) - stream.ptrOffset
+		encoder.elemEncoder.Encode(dataPtr, stream)
+	}
 }
 
 type pointerDecoder struct {
@@ -33,6 +36,12 @@ func (decoder *pointerDecoder) Decode(ptr unsafe.Pointer, iter *Iterator) {
 
 func (decoder *pointerDecoder) DecodePointers(ptr unsafe.Pointer, iter *Iterator) {
 	ptrBufPtr := unsafe.Pointer(&iter.ptrBuf)
+	offset := *(*uintptr)(ptrOfSlice(ptrBufPtr))
+	if offset == 0 {
+		return
+	}
+	iter.ptrBuf = iter.ptrBuf[offset:]
+	ptrBufPtr = unsafe.Pointer(&iter.ptrBuf)
 	*(*unsafe.Pointer)(ptr) = ptrOfSlice(ptrBufPtr)
 	decoder.elemDecoder.Decode(ptrBufPtr, iter)
 }

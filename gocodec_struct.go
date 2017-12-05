@@ -53,8 +53,7 @@ func (decoder *structDecoder) DecodePointers(ptr unsafe.Pointer, iter *Iterator)
 	basePtrBuf := iter.ptrBuf
 	for _, field := range decoder.fields {
 		fieldPtr := unsafe.Pointer(uintptr(ptr) + field.offset)
-		ptrDataOffset := *(*uintptr)(fieldPtr)
-		iter.ptrBuf = basePtrBuf[field.offset+ptrDataOffset:]
+		iter.ptrBuf = basePtrBuf[field.offset:]
 		field.decoder.DecodePointers(fieldPtr, iter)
 	}
 }
