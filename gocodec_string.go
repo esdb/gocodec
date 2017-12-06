@@ -5,7 +5,7 @@ import (
 )
 
 type stringCodec struct {
-	NoopCodec
+	BaseCodec
 }
 
 func (codec *stringCodec) Encode(stream *Stream) {

@@ -38,11 +38,7 @@ func (stream *Stream) Marshal(val interface{}) {
 		0, 0, 0, 0, // crc32
 	}...)
 	baseCursor := len(stream.buf)
-	stream.cursor = uintptr(baseCursor)
-	valAsSlice := *(*[]byte)((unsafe.Pointer)(&sliceHeader{
-		Data: uintptr(ptrOfEmptyInterface(val)), Len: int(valType.Size()), Cap: int(valType.Size())}))
-	stream.buf = append(stream.buf, valAsSlice...)
-	encoder.Encode(stream)
+	encoder.EncodeEmptyInterface(uintptr(ptrOfEmptyInterface(val)), encoder, stream)
 	if stream.Error != nil {
 		return
 	}

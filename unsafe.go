@@ -26,9 +26,9 @@ func ptrOfEmptyInterface(obj interface{}) unsafe.Pointer {
 	return unsafe.Pointer((*emptyInterface)(unsafe.Pointer(&obj)).word)
 }
 
-func emptyInterfaceAsBytes(typ reflect.Type, val interface{}) []byte {
+func ptrAsBytes(valType reflect.Type, ptr uintptr) []byte {
 	valAsSlice := *(*[]byte)((unsafe.Pointer)(&sliceHeader{
-		Data: uintptr(ptrOfEmptyInterface(val)), Len: int(typ.Size()), Cap: int(typ.Size())}))
+		Data: ptr, Len: int(valType.Size()), Cap: int(valType.Size())}))
 	return valAsSlice
 }
 

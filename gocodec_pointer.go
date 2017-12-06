@@ -1,49 +1,41 @@
 package gocodec
-//
-//import (
-//	"unsafe"
-//	"reflect"
-//)
-//
-//type pointerEncoder struct {
-//	elemEncoder ValEncoder
-//}
-//
-//func (encoder *pointerEncoder) Encode(ptr unsafe.Pointer, stream *Stream) {
-//	stream.buf = append(stream.buf, 8, 0, 0, 0, 0, 0, 0, 0)
-//	encoder.EncodePointers(ptr, stream)
-//}
-//
-//func (encoder *pointerEncoder) EncodePointers(ptr unsafe.Pointer, stream *Stream) {
-//	dataPtr := *(*unsafe.Pointer)(ptr)
-//	if dataPtr != nil {
-//		*(*uintptr)(stream.ptr()) = uintptr(len(stream.buf)) - stream.ptrOffset
-//		encoder.elemEncoder.Encode(dataPtr, stream)
-//	}
-//}
-//
-//type pointerDecoder struct {
-//	elemType    reflect.Type
-//	elemDecoder ValDecoder
-//}
-//
-//func (decoder *pointerDecoder) Decode(ptr unsafe.Pointer, iter *Iterator) {
-//	typedPtr := (*[8]byte)(ptr)
-//	copy(typedPtr[:], iter.buf)
-//	iter.ptrBuf = iter.buf
-//	decoder.DecodePointers(ptr, iter)
-//}
-//
-//func (decoder *pointerDecoder) DecodePointers(ptr unsafe.Pointer, iter *Iterator) {
-//	offset := *(*uintptr)(unsafe.Pointer(&iter.ptrBuf[0]))
-//	if offset == 0 {
-//		return
-//	}
-//	iter.ptrBuf = iter.ptrBuf[offset:]
-//	next := unsafe.Pointer(&iter.ptrBuf[0])
-//	*(*unsafe.Pointer)(ptr) = next
-//	oldBuf := iter.buf
-//	iter.buf = iter.ptrBuf
-//	decoder.elemDecoder.Decode(next, iter)
-//	iter.buf = oldBuf
-//}
+
+import (
+	"unsafe"
+)
+
+type pointerEncoder struct {
+	BaseCodec
+	elemEncoder ValEncoder
+}
+
+func (encoder *pointerEncoder) EncodeEmptyInterface(ptr uintptr, subEncoder ValEncoder, stream *Stream) {
+	encoder.BaseCodec.EncodeEmptyInterface(uintptr(unsafe.Pointer(&ptr)), subEncoder, stream)
+}
+
+func (encoder *pointerEncoder) Encode(stream *Stream) {
+	pPtr := unsafe.Pointer(&stream.buf[stream.cursor])
+	ptr := *(*uintptr)(pPtr)
+	if ptr != 0 {
+		valAsBytes := ptrAsBytes(encoder.elemEncoder.Type(), ptr)
+		offset := uintptr(len(stream.buf)) - stream.cursor
+		*(*uintptr)(pPtr) = offset
+		stream.buf = append(stream.buf, valAsBytes...)
+	}
+}
+
+type pointerDecoder struct {
+	BaseCodec
+	elemDecoder ValDecoder
+}
+
+func (decoder *pointerDecoder) Decode(iter *Iterator) {
+	pPtr := unsafe.Pointer(&iter.cursor[0])
+	offset := *(*uintptr)(pPtr)
+	if offset == 0 {
+		return
+	}
+	iter.cursor = iter.cursor[offset:]
+	*(*uintptr)(pPtr) = uintptr(unsafe.Pointer(&iter.cursor[0]))
+	decoder.elemDecoder.Decode(iter)
+}

@@ -1,7 +1,7 @@
 package gocodec
 
 type structEncoder struct {
-	NoopCodec
+	BaseCodec
 	fields     []structFieldEncoder
 }
 
@@ -19,7 +19,7 @@ func (encoder *structEncoder) Encode(stream *Stream) {
 }
 
 type structDecoder struct {
-	NoopCodec
+	BaseCodec
 	fields     []structFieldDecoder
 }
 

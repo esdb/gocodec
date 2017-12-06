@@ -18,6 +18,7 @@ type API interface {
 
 type ValEncoder interface {
 	Encode(stream *Stream)
+	EncodeEmptyInterface(ptr uintptr, encoder ValEncoder, stream *Stream)
 	Type() reflect.Type
 	IsNoop() bool
 	Signature() uint32
