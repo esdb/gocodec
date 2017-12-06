@@ -35,12 +35,14 @@ func (iter *Iterator) Unmarshal(nilPtr interface{}) interface{} {
 	encoded := iter.buf[8:size]
 	nextBuf := iter.buf[size:]
 	iter.buf = iter.buf[4:]
-	crcVal := *(*uint32)(unsafe.Pointer(&iter.buf[0]))
-	crc := crc32.NewIEEE()
-	crc.Write(encoded)
-	if crc.Sum32() != crcVal {
-		iter.ReportError("DecodeVal", errors.New("crc32 verification failed"))
-		return nil
+	if iter.cfg.verifyChecksum {
+		crcVal := *(*uint32)(unsafe.Pointer(&iter.buf[0]))
+		crc := crc32.NewIEEE()
+		crc.Write(encoded)
+		if crc.Sum32() != crcVal {
+			iter.ReportError("DecodeVal", errors.New("crc32 verification failed"))
+			return nil
+		}
 	}
 	iter.buf = iter.buf[4:]
 	val := nilPtr

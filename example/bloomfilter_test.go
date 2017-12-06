@@ -22,8 +22,9 @@ func Test_bloomfilter(t *testing.T) {
 	should.Nil(err)
 	should.NotNil(encoded)
 	ioutil.WriteFile("/tmp/bloomfilter.bin", encoded, 0666)
-	var f2 bloom.BloomFilter
-	should.Nil(gocodec.Unmarshal(encoded, &f2))
+	decoded, err := gocodec.Unmarshal(encoded, (*bloom.BloomFilter)(nil))
+	should.Nil(err)
+	f2 := decoded.(*bloom.BloomFilter)
 	should.True(f2.Test([]byte("hello")))
 	should.False(f2.Test([]byte("hi")))
 }
@@ -34,8 +35,9 @@ func Test_mmap(t *testing.T) {
 	should.Nil(err)
 	mem, err := mmap.Map(f, mmap.COPY, 0)
 	should.Nil(err)
-	var f2 bloom.BloomFilter
-	should.Nil(gocodec.Unmarshal(mem, &f2))
+	decoded, err := gocodec.Unmarshal(mem, (*bloom.BloomFilter)(nil))
+	should.Nil(err)
+	f2 := decoded.(*bloom.BloomFilter)
 	should.True(f2.Test([]byte("hello")))
 	should.False(f2.Test([]byte("hi")))
 	mem.Unmap()
@@ -52,31 +54,31 @@ func Test_json(t *testing.T) {
 }
 
 func Benchmark(b *testing.B) {
+	api := gocodec.Config{VerifyChecksum: false}.Froze()
 	b.Run("gocodec", func(b *testing.B) {
 		f, _ := os.OpenFile("/tmp/bloomfilter.bin", os.O_RDONLY, 0)
 		b.ReportAllocs()
 		for i := 0; i < b.N; i++ {
-			var f2 bloom.BloomFilter
 			mem, _ := mmap.Map(f, mmap.COPY, 0)
-			_, err := gocodec.Unmarshal(mem, &f2)
+			_, err := api.Unmarshal(mem, (*bloom.BloomFilter)(nil))
 			if err != nil {
 				b.Error(err)
 			}
 			mem.Unmap()
 		}
 	})
-	b.Run("json", func(b *testing.B) {
-		f, _ := os.Open("/tmp/bloomfilter.json")
-		b.ReportAllocs()
-		for i := 0; i < b.N; i++ {
-			var f2 bloom.BloomFilter
-			//bytes, _ := ioutil.ReadFile("/tmp/bloomfilter.bin")
-			mem, _ := mmap.Map(f, mmap.COPY, 0)
-			err := jsoniter.Unmarshal(mem, &f2)
-			if err != nil {
-				b.Error(err)
-			}
-			mem.Unmap()
-		}
-	})
+	//b.Run("json", func(b *testing.B) {
+	//	f, _ := os.Open("/tmp/bloomfilter.json")
+	//	b.ReportAllocs()
+	//	for i := 0; i < b.N; i++ {
+	//		var f2 bloom.BloomFilter
+	//		//bytes, _ := ioutil.ReadFile("/tmp/bloomfilter.bin")
+	//		mem, _ := mmap.Map(f, mmap.COPY, 0)
+	//		err := jsoniter.Unmarshal(mem, &f2)
+	//		if err != nil {
+	//			b.Error(err)
+	//		}
+	//		mem.Unmap()
+	//	}
+	//})
 }
