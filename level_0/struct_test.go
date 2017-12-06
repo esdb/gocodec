@@ -13,13 +13,13 @@ func Test_simple_struct(t *testing.T) {
 		Field2 int
 	}
 	obj := TestObject{1, 2}
-	encoded, err  :=gocodec.Marshal(obj)
+	encoded, err := gocodec.Marshal(obj)
 	should.Nil(err)
 	should.Equal([]byte{
 		0x1, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0,
 		0x2, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0,
 	}, encoded[8:])
-	var decoded TestObject
-	should.Nil(gocodec.Unmarshal(encoded, &decoded))
-	should.Equal(obj, decoded)
+	decoded, err := gocodec.Unmarshal(encoded, (*TestObject)(nil))
+	should.Nil(err)
+	should.Equal(obj, *decoded.(*TestObject))
 }

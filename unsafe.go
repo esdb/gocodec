@@ -1,6 +1,9 @@
 package gocodec
 
-import "unsafe"
+import (
+	"unsafe"
+	"reflect"
+)
 
 // emptyInterface is the header for an interface{} value.
 type emptyInterface struct {
@@ -21,6 +24,12 @@ type sliceHeader struct {
 
 func ptrOfEmptyInterface(obj interface{}) unsafe.Pointer {
 	return unsafe.Pointer((*emptyInterface)(unsafe.Pointer(&obj)).word)
+}
+
+func emptyInterfaceAsBytes(typ reflect.Type, val interface{}) []byte {
+	valAsSlice := *(*[]byte)((unsafe.Pointer)(&sliceHeader{
+		Data: uintptr(ptrOfEmptyInterface(val)), Len: int(typ.Size()), Cap: int(typ.Size())}))
+	return valAsSlice
 }
 
 func (header *sliceHeader) DataPtr() unsafe.Pointer {

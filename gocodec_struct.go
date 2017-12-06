@@ -1,11 +1,7 @@
 package gocodec
 
-import (
-	"unsafe"
-)
-
 type structEncoder struct {
-	structSize int
+	NoopCodec
 	fields     []structFieldEncoder
 }
 
@@ -14,25 +10,16 @@ type structFieldEncoder struct {
 	encoder ValEncoder
 }
 
-func (encoder *structEncoder) Encode(ptr unsafe.Pointer, stream *Stream) {
-	slice := sliceHeader{Data: uintptr(ptr), Len: encoder.structSize, Cap: encoder.structSize}
-	slicePtr := unsafe.Pointer(&slice)
-	stream.ptrOffset = uintptr(len(stream.buf))
-	stream.buf = append(stream.buf, *(*[]byte)(slicePtr)...)
-	encoder.EncodePointers(ptr, stream)
-}
-
-func (encoder *structEncoder) EncodePointers(ptr unsafe.Pointer, stream *Stream) {
-	basePtrOffset := stream.ptrOffset
+func (encoder *structEncoder) Encode(stream *Stream) {
+	baseCursor := stream.cursor
 	for _, field := range encoder.fields {
-		fieldPtr := uintptr(ptr) + field.offset
-		stream.ptrOffset = basePtrOffset + field.offset
-		field.encoder.EncodePointers(unsafe.Pointer(fieldPtr), stream)
+		stream.cursor = baseCursor + field.offset
+		field.encoder.Encode(stream)
 	}
 }
 
 type structDecoder struct {
-	structSize int
+	NoopCodec
 	fields     []structFieldDecoder
 }
 
@@ -41,19 +28,10 @@ type structFieldDecoder struct {
 	decoder ValDecoder
 }
 
-func (decoder *structDecoder) Decode(ptr unsafe.Pointer, iter *Iterator) {
-	slice := sliceHeader{Data: uintptr(ptr), Len: decoder.structSize, Cap: decoder.structSize}
-	slicePtr := unsafe.Pointer(&slice)
-	copy(*(*[]byte)(slicePtr), iter.buf)
-	iter.ptrBuf = iter.buf
-	decoder.DecodePointers(ptr, iter)
-}
-
-func (decoder *structDecoder) DecodePointers(ptr unsafe.Pointer, iter *Iterator) {
-	basePtrBuf := iter.ptrBuf
+func (decoder *structDecoder) Decode(iter *Iterator) {
+	baseCursor := iter.cursor
 	for _, field := range decoder.fields {
-		fieldPtr := unsafe.Pointer(uintptr(ptr) + field.offset)
-		iter.ptrBuf = basePtrBuf[field.offset:]
-		field.decoder.DecodePointers(fieldPtr, iter)
+		iter.cursor = baseCursor[field.offset:]
+		field.decoder.Decode(iter)
 	}
 }

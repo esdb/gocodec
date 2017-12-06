@@ -3,26 +3,31 @@ package gocodec
 import (
 	"unsafe"
 	"sync/atomic"
+	"reflect"
 )
 
 type Config struct {
 }
 
 type API interface {
-	Marshal(obj interface{}) ([]byte, error)
-	Unmarshal(buf []byte, objPtr interface{}) error
+	Marshal(val interface{}) ([]byte, error)
+	Unmarshal(buf []byte, nilPtr interface{}) (interface{}, error)
 	NewIterator(buf []byte) *Iterator
 	NewStream(buf []byte) *Stream
 }
 
 type ValEncoder interface {
-	Encode(ptr unsafe.Pointer, stream *Stream)
-	EncodePointers(ptr unsafe.Pointer, stream *Stream)
+	Encode(stream *Stream)
+	Type() reflect.Type
+	IsNoop() bool
+	Signature() uint32
 }
 
 type ValDecoder interface {
-	Decode(ptr unsafe.Pointer, iter *Iterator)
-	DecodePointers(ptr unsafe.Pointer, iter *Iterator)
+	Decode(iter *Iterator)
+	Type() reflect.Type
+	IsNoop() bool
+	Signature() uint32
 }
 
 type frozenConfig struct {
@@ -43,18 +48,18 @@ func Marshal(obj interface{}) ([]byte, error) {
 	return DefaultConfig.Marshal(obj)
 }
 
-func Unmarshal(buf []byte, objPtr interface{}) error {
+func Unmarshal(buf []byte, objPtr interface{}) (interface{}, error) {
 	return DefaultConfig.Unmarshal(buf, objPtr)
 }
 
-func (cfg *frozenConfig) Marshal(obj interface{}) ([]byte, error) {
+func (cfg *frozenConfig) Marshal(val interface{}) ([]byte, error) {
 	stream := cfg.NewStream(nil)
-	stream.EncodeVal(obj)
+	stream.Marshal(val)
 	return stream.Buffer(), stream.Error
 }
 
-func (cfg *frozenConfig) Unmarshal(buf []byte, objPtr interface{}) error {
+func (cfg *frozenConfig) Unmarshal(buf []byte, nilPtr interface{}) (interface{}, error) {
 	iter := cfg.NewIterator(buf)
-	iter.DecodeVal(objPtr)
-	return iter.Error
+	val := iter.Unmarshal(nilPtr)
+	return val, iter.Error
 }

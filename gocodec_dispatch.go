@@ -47,13 +47,13 @@ func (cfg *frozenConfig) getEncoderFromCache(cacheKey reflect.Type) ValEncoder {
 	return cache[cacheKey]
 }
 
-func encoderOfType(cfg *frozenConfig, typ reflect.Type) (ValEncoder, error) {
-	cacheKey := typ
+func encoderOfType(cfg *frozenConfig, valType reflect.Type) (ValEncoder, error) {
+	cacheKey := valType
 	encoder := cfg.getEncoderFromCache(cacheKey)
 	if encoder != nil {
 		return encoder, nil
 	}
-	encoder, err := createEncoderOfType(cfg, typ)
+	encoder, err := createEncoderOfType(cfg, valType)
 	if err != nil {
 		return nil, err
 	}
@@ -61,13 +61,13 @@ func encoderOfType(cfg *frozenConfig, typ reflect.Type) (ValEncoder, error) {
 	return encoder, err
 }
 
-func decoderOfType(cfg *frozenConfig, typ reflect.Type) (ValDecoder, error) {
-	cacheKey := typ
+func decoderOfType(cfg *frozenConfig, valType reflect.Type) (ValDecoder, error) {
+	cacheKey := valType
 	decoder := cfg.getDecoderFromCache(cacheKey)
 	if decoder != nil {
 		return decoder, nil
 	}
-	decoder, err := createDecoderOfType(cfg, typ)
+	decoder, err := createDecoderOfType(cfg, valType)
 	if err != nil {
 		return nil, err
 	}
@@ -75,121 +75,85 @@ func decoderOfType(cfg *frozenConfig, typ reflect.Type) (ValDecoder, error) {
 	return decoder, err
 }
 
-func createEncoderOfType(cfg *frozenConfig, typ reflect.Type) (ValEncoder, error) {
-	switch typ.Kind() {
-	case reflect.Int:
-		return &intCodec{}, nil
-	case reflect.Int8:
-		return &int8Codec{}, nil
-	case reflect.Int16:
-		return &int16Codec{}, nil
-	case reflect.Int32:
-		return &int32Codec{}, nil
-	case reflect.Int64:
-		return &int64Codec{}, nil
-	case reflect.Uint:
-		return &uintCodec{}, nil
-	case reflect.Uint8:
-		return &uint8Codec{}, nil
-	case reflect.Uint16:
-		return &uint16Codec{}, nil
-	case reflect.Uint32:
-		return &uint32Codec{}, nil
-	case reflect.Uint64:
-		return &uint64Codec{}, nil
-	case reflect.Uintptr:
-		return &uintptrCodec{}, nil
-	case reflect.Float32:
-		return &float32Codec{}, nil
-	case reflect.Float64:
-		return &float64Codec{}, nil
-	case reflect.String:
-		return &stringCodec{}, nil
+func createEncoderOfType(cfg *frozenConfig, valType reflect.Type) (ValEncoder, error) {
+	switch valType.Kind() {
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64,
+		reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64,
+		reflect.Uintptr, reflect.Float32, reflect.Float64:
+		return NewNoopCodec(valType), nil
+		//case reflect.String:
+		//	return &stringCodec{}, nil
 	case reflect.Struct:
-		fields := make([]structFieldEncoder, typ.NumField())
-		var err error
-		for i := 0; i < typ.NumField(); i++ {
-			fields[i].offset = typ.Field(i).Offset
-			fields[i].encoder, err = createEncoderOfType(cfg, typ.Field(i).Type)
+		fields := make([]structFieldEncoder, 0, valType.NumField())
+		for i := 0; i < valType.NumField(); i++ {
+			encoder, err := createEncoderOfType(cfg, valType.Field(i).Type)
 			if err != nil {
 				return nil, err
 			}
+			if !encoder.IsNoop() {
+				fields = append(fields, structFieldEncoder{
+					offset:  valType.Field(i).Offset,
+					encoder: encoder,
+				})
+			}
 		}
-		encoder := &structEncoder{structSize: int(typ.Size()), fields: fields}
-		if len(fields) == 1 && typ.Field(0).Type.Kind() == reflect.Ptr {
-			return &singlePointerFix{encoder:encoder}, nil
-		}
+		encoder := &structEncoder{NoopCodec: *NewNoopCodec(valType), fields: fields}
+		//if len(fields) == 1 && valType.Field(0).Type.Kind() == reflect.Ptr {
+		//	return &singlePointerFix{encoder: encoder}, nil
+		//}
 		return encoder, nil
-	case reflect.Slice:
-		elemEncoder, err := createEncoderOfType(cfg, typ.Elem())
-		if err != nil {
-			return nil, err
-		}
-		return &sliceEncoder{elemSize: int(typ.Elem().Size()), elemEncoder: elemEncoder}, nil
-	case reflect.Ptr:
-		elemEncoder, err := createEncoderOfType(cfg, typ.Elem())
-		if err != nil {
-			return nil, err
-		}
-		encoder := &pointerEncoder{elemEncoder: elemEncoder}
-		return &singlePointerFix{encoder:encoder}, nil
+		//case reflect.Slice:
+		//	elemEncoder, err := createEncoderOfType(cfg, CodecMeta.Elem())
+		//	if err != nil {
+		//		return nil, err
+		//	}
+		//	return &sliceEncoder{elemSize: int(CodecMeta.Elem().Size()), elemEncoder: elemEncoder}, nil
+		//case reflect.Ptr:
+		//	elemEncoder, err := createEncoderOfType(cfg, CodecMeta.Elem())
+		//	if err != nil {
+		//		return nil, err
+		//	}
+		//	encoder := &pointerEncoder{elemEncoder: elemEncoder}
+		//	return &singlePointerFix{encoder: encoder}, nil
 	}
-	return nil, fmt.Errorf("unsupported type %s", typ.String())
+	return nil, fmt.Errorf("unsupported type %s", valType.String())
 }
 
-func createDecoderOfType(cfg *frozenConfig, typ reflect.Type) (ValDecoder, error) {
-	switch typ.Kind() {
-	case reflect.Int:
-		return &intCodec{}, nil
-	case reflect.Int8:
-		return &int8Codec{}, nil
-	case reflect.Int16:
-		return &int16Codec{}, nil
-	case reflect.Int32:
-		return &int32Codec{}, nil
-	case reflect.Int64:
-		return &int64Codec{}, nil
-	case reflect.Uint:
-		return &uintCodec{}, nil
-	case reflect.Uint8:
-		return &uint8Codec{}, nil
-	case reflect.Uint16:
-		return &uint16Codec{}, nil
-	case reflect.Uint32:
-		return &uint32Codec{}, nil
-	case reflect.Uint64:
-		return &uint64Codec{}, nil
-	case reflect.Uintptr:
-		return &uintptrCodec{}, nil
-	case reflect.Float32:
-		return &float32Codec{}, nil
-	case reflect.Float64:
-		return &float64Codec{}, nil
-	case reflect.String:
-		return &stringCodec{}, nil
-	case reflect.Struct:
-		fields := make([]structFieldDecoder, typ.NumField())
-		var err error
-		for i := 0; i < typ.NumField(); i++ {
-			fields[i].offset = typ.Field(i).Offset
-			fields[i].decoder, err = createDecoderOfType(cfg, typ.Field(i).Type)
-			if err != nil {
-				return nil, err
+func createDecoderOfType(cfg *frozenConfig, valType reflect.Type) (ValDecoder, error) {
+	switch valType.Kind() {
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64,
+		reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64,
+		reflect.Uintptr, reflect.Float32, reflect.Float64:
+		return &NoopCodec{valType: valType}, nil
+		//case reflect.String:
+		//	return &stringCodec{}, nil
+		case reflect.Struct:
+			fields := make([]structFieldDecoder, 0, valType.NumField())
+			for i := 0; i < valType.NumField(); i++ {
+				decoder, err := createDecoderOfType(cfg, valType.Field(i).Type)
+				if err != nil {
+					return nil, err
+				}
+				if !decoder.IsNoop() {
+					fields = append(fields, structFieldDecoder{
+						offset: valType.Field(i).Offset,
+						decoder: decoder,
+					})
+				}
 			}
-		}
-		return &structDecoder{structSize: int(typ.Size()), fields: fields}, nil
-	case reflect.Slice:
-		elemDecoder, err := createDecoderOfType(cfg, typ.Elem())
-		if err != nil {
-			return nil, err
-		}
-		return &sliceDecoder{elemSize: int(typ.Elem().Size()), elemDecoder: elemDecoder}, nil
-	case reflect.Ptr:
-		elemDecoder, err := createDecoderOfType(cfg, typ.Elem())
-		if err != nil {
-			return nil, err
-		}
-		return &pointerDecoder{elemType: typ.Elem(), elemDecoder: elemDecoder}, nil
+			return &structDecoder{NoopCodec: *NewNoopCodec(valType), fields: fields}, nil
+		//case reflect.Slice:
+		//	elemDecoder, err := createDecoderOfType(cfg, CodecMeta.Elem())
+		//	if err != nil {
+		//		return nil, err
+		//	}
+		//	return &sliceDecoder{elemSize: int(CodecMeta.Elem().Size()), elemDecoder: elemDecoder}, nil
+		//case reflect.Ptr:
+		//	elemDecoder, err := createDecoderOfType(cfg, CodecMeta.Elem())
+		//	if err != nil {
+		//		return nil, err
+		//	}
+		//	return &pointerDecoder{elemType: CodecMeta.Elem(), elemDecoder: elemDecoder}, nil
 	}
-	return nil, fmt.Errorf("unsupported type %s", typ.String())
+	return nil, fmt.Errorf("unsupported type %s", valType.String())
 }
