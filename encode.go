@@ -37,7 +37,8 @@ func (stream *Stream) Marshal(val interface{}) {
 		0, 0, 0, 0, // size
 		0, 0, 0, 0, // crc32
 	}...)
-	beforeEncodeOffset := len(stream.buf)
+	baseCursor := len(stream.buf)
+	stream.cursor = uintptr(baseCursor)
 	valAsSlice := *(*[]byte)((unsafe.Pointer)(&sliceHeader{
 		Data: uintptr(ptrOfEmptyInterface(val)), Len: int(valType.Size()), Cap: int(valType.Size())}))
 	stream.buf = append(stream.buf, valAsSlice...)
@@ -45,11 +46,11 @@ func (stream *Stream) Marshal(val interface{}) {
 	if stream.Error != nil {
 		return
 	}
-	encoded := stream.buf[beforeEncodeOffset:]
-	pSizeBuf := stream.buf[beforeEncodeOffset-8:]
+	encoded := stream.buf[baseCursor:]
+	pSizeBuf := stream.buf[baseCursor-8:]
 	pSize := unsafe.Pointer(&pSizeBuf[0])
 	*(*uint32)(pSize) = uint32(len(encoded)) + 8
-	pCrcBuf := stream.buf[beforeEncodeOffset-4:]
+	pCrcBuf := stream.buf[baseCursor-4:]
 	pCrc := unsafe.Pointer(&pCrcBuf[0])
 	crc := crc32.NewIEEE()
 	crc.Write(encoded)

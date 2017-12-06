@@ -45,6 +45,7 @@ func (iter *Iterator) Unmarshal(nilPtr interface{}) interface{} {
 	iter.buf = iter.buf[4:]
 	val := nilPtr
 	(*emptyInterface)(unsafe.Pointer(&val)).word = uintptr(unsafe.Pointer(&iter.buf[0]))
+	iter.cursor = iter.buf
 	decoder.Decode(iter)
 	iter.buf = nextBuf
 	return val

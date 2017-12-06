@@ -81,8 +81,8 @@ func createEncoderOfType(cfg *frozenConfig, valType reflect.Type) (ValEncoder, e
 		reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64,
 		reflect.Uintptr, reflect.Float32, reflect.Float64:
 		return NewNoopCodec(valType), nil
-		//case reflect.String:
-		//	return &stringCodec{}, nil
+	case reflect.String:
+		return &stringCodec{NoopCodec: *NewNoopCodec(valType)}, nil
 	case reflect.Struct:
 		fields := make([]structFieldEncoder, 0, valType.NumField())
 		for i := 0; i < valType.NumField(); i++ {
@@ -125,8 +125,8 @@ func createDecoderOfType(cfg *frozenConfig, valType reflect.Type) (ValDecoder, e
 		reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64,
 		reflect.Uintptr, reflect.Float32, reflect.Float64:
 		return &NoopCodec{valType: valType}, nil
-		//case reflect.String:
-		//	return &stringCodec{}, nil
+		case reflect.String:
+			return &stringCodec{NoopCodec: *NewNoopCodec(valType)}, nil
 		case reflect.Struct:
 			fields := make([]structFieldDecoder, 0, valType.NumField())
 			for i := 0; i < valType.NumField(); i++ {
