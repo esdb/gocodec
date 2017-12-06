@@ -58,7 +58,7 @@ func Benchmark(b *testing.B) {
 		for i := 0; i < b.N; i++ {
 			var f2 bloom.BloomFilter
 			mem, _ := mmap.Map(f, mmap.COPY, 0)
-			err := gocodec.Unmarshal(mem, &f2)
+			_, err := gocodec.Unmarshal(mem, &f2)
 			if err != nil {
 				b.Error(err)
 			}

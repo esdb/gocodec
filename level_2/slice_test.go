@@ -17,9 +17,9 @@ func Test_string_slice(t *testing.T) {
 		32, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0,                         // string header
 		17, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0,                         // string header
 		'h', 'i'}, encoded[8:])
-	var val []string
-	should.Nil(gocodec.Unmarshal(encoded, &val))
-	should.Equal([]string{"h", "i"}, val)
+	decoded, err := gocodec.Unmarshal(encoded, (*[]string)(nil))
+	should.Nil(err)
+	should.Equal([]string{"h", "i"}, *decoded.(*[]string))
 }
 
 func Benchmark_string_slice(b *testing.B) {
@@ -31,7 +31,7 @@ func Benchmark_string_slice(b *testing.B) {
 		stream := gocodec.DefaultConfig.NewStream(nil)
 		for i := 0; i < b.N; i++ {
 			stream.Reset(stream.Buffer()[:0])
-			stream.EncodeVal(data)
+			stream.Marshal(data)
 		}
 	})
 	b.Run("goc decode", func(b *testing.B) {
@@ -39,7 +39,7 @@ func Benchmark_string_slice(b *testing.B) {
 		iter := gocodec.DefaultConfig.NewIterator(nil)
 		for i := 0; i < b.N; i++ {
 			iter.Reset(append(([]byte)(nil), gocEncoded...))
-			iter.DecodeVal(&data)
+			iter.Unmarshal(&data)
 		}
 	})
 	b.Run("json encode", func(b *testing.B) {

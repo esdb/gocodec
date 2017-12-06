@@ -16,7 +16,9 @@ func (encoder *pointerEncoder) Encode(stream *Stream) {
 		valAsBytes := ptrAsBytes(int(encoder.elemEncoder.Type().Size()), ptr)
 		offset := uintptr(len(stream.buf)) - stream.cursor
 		*(*uintptr)(pPtr) = offset
+		stream.cursor = uintptr(len(stream.buf))
 		stream.buf = append(stream.buf, valAsBytes...)
+		encoder.elemEncoder.Encode(stream)
 	}
 }
 

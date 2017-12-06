@@ -17,7 +17,7 @@ func Test_ptr(t *testing.T) {
 		0x5, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0,
 		0x68, 0x65, 0x6c, 0x6c, 0x6f,
 	}, encoded[8:])
-	var decoded *string
-	should.Nil(gocodec.Unmarshal(encoded, &decoded))
-	should.Equal("hello", *decoded)
+	decoded, err := gocodec.Unmarshal(encoded, (**string)(nil))
+	should.Nil(err)
+	should.Equal("hello", **decoded.(**string))
 }
