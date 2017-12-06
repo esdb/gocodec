@@ -102,12 +102,16 @@ func createEncoderOfType(cfg *frozenConfig, valType reflect.Type) (ValEncoder, e
 		//	return &singlePointerFix{encoder: encoder}, nil
 		//}
 		return encoder, nil
-		//case reflect.Slice:
-		//	elemEncoder, err := createEncoderOfType(cfg, CodecMeta.Elem())
-		//	if err != nil {
-		//		return nil, err
-		//	}
-		//	return &sliceEncoder{elemSize: int(CodecMeta.Elem().Size()), elemEncoder: elemEncoder}, nil
+	case reflect.Slice:
+		elemEncoder, err := createEncoderOfType(cfg, valType.Elem())
+		if err != nil {
+			return nil, err
+		}
+		if elemEncoder.IsNoop() {
+			elemEncoder = nil
+		}
+		return &sliceEncoder{BaseCodec: *NewBaseCodec(valType),
+			elemSize: int(valType.Elem().Size()), elemEncoder: elemEncoder}, nil
 	case reflect.Ptr:
 		elemEncoder, err := createEncoderOfType(cfg, valType.Elem())
 		if err != nil {
@@ -141,12 +145,13 @@ func createDecoderOfType(cfg *frozenConfig, valType reflect.Type) (ValDecoder, e
 			}
 		}
 		return &structDecoder{BaseCodec: *NewBaseCodec(valType), fields: fields}, nil
-		//case reflect.Slice:
-		//	elemDecoder, err := createDecoderOfType(cfg, CodecMeta.Elem())
-		//	if err != nil {
-		//		return nil, err
-		//	}
-		//	return &sliceDecoder{elemSize: int(CodecMeta.Elem().Size()), elemDecoder: elemDecoder}, nil
+	case reflect.Slice:
+		elemDecoder, err := createDecoderOfType(cfg, valType.Elem())
+		if err != nil {
+			return nil, err
+		}
+		return &sliceDecoder{BaseCodec: *NewBaseCodec(valType),
+			elemSize: int(valType.Elem().Size()), elemDecoder: elemDecoder}, nil
 	case reflect.Ptr:
 		elemDecoder, err := createDecoderOfType(cfg, valType.Elem())
 		if err != nil {

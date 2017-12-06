@@ -15,7 +15,7 @@ func Test_byte_slice(t *testing.T) {
 		5, 0, 0, 0, 0, 0, 0, 0,
 		5, 0, 0, 0, 0, 0, 0, 0,
 		'h', 'e', 'l', 'l', 'o'}, encoded[8:])
-	var val []byte
-	should.Nil(gocodec.Unmarshal(encoded, &val))
-	should.Equal([]byte("hello"), val)
+	decoded, err := gocodec.Unmarshal(encoded, (*[]byte)(nil))
+	should.Nil(err)
+	should.Equal([]byte("hello"), *decoded.(*[]byte))
 }

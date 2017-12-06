@@ -17,7 +17,7 @@ func (encoder *pointerEncoder) Encode(stream *Stream) {
 	pPtr := unsafe.Pointer(&stream.buf[stream.cursor])
 	ptr := *(*uintptr)(pPtr)
 	if ptr != 0 {
-		valAsBytes := ptrAsBytes(encoder.elemEncoder.Type(), ptr)
+		valAsBytes := ptrAsBytes(int(encoder.elemEncoder.Type().Size()), ptr)
 		offset := uintptr(len(stream.buf)) - stream.cursor
 		*(*uintptr)(pPtr) = offset
 		stream.buf = append(stream.buf, valAsBytes...)

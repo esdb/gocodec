@@ -2,7 +2,6 @@ package gocodec
 
 import (
 	"unsafe"
-	"reflect"
 )
 
 // emptyInterface is the header for an interface{} value.
@@ -26,9 +25,9 @@ func ptrOfEmptyInterface(obj interface{}) unsafe.Pointer {
 	return unsafe.Pointer((*emptyInterface)(unsafe.Pointer(&obj)).word)
 }
 
-func ptrAsBytes(valType reflect.Type, ptr uintptr) []byte {
+func ptrAsBytes(size int, ptr uintptr) []byte {
 	valAsSlice := *(*[]byte)((unsafe.Pointer)(&sliceHeader{
-		Data: ptr, Len: int(valType.Size()), Cap: int(valType.Size())}))
+		Data: ptr, Len: size, Cap: size}))
 	return valAsSlice
 }
 

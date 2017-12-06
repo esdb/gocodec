@@ -18,7 +18,7 @@ func (codec *BaseCodec) Encode(stream *Stream) {
 
 func (codec *BaseCodec) EncodeEmptyInterface(ptr uintptr, encoder ValEncoder, stream *Stream) {
 	stream.cursor = uintptr(len(stream.buf))
-	valAsSlice := ptrAsBytes(codec.valType, ptr)
+	valAsSlice := ptrAsBytes(int(codec.valType.Size()), ptr)
 	stream.buf = append(stream.buf, valAsSlice...)
 	encoder.Encode(stream)
 }
