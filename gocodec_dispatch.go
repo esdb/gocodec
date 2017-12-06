@@ -151,6 +151,9 @@ func createDecoderOfType(cfg *frozenConfig, valType reflect.Type) (ValDecoder, e
 		if err != nil {
 			return nil, err
 		}
+		if elemDecoder.IsNoop() {
+			elemDecoder = nil
+		}
 		return &sliceDecoder{BaseCodec: *NewBaseCodec(valType),
 			elemSize: int(valType.Elem().Size()), elemDecoder: elemDecoder}, nil
 	case reflect.Ptr:

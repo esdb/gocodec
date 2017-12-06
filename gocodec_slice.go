@@ -38,11 +38,13 @@ func (decoder *sliceDecoder) Decode(iter *Iterator) {
 	header := (*sliceHeader)(pSlice)
 	offset := header.Data
 	header.Data = uintptr(unsafe.Pointer(&iter.cursor[offset]))
-	iter.cursor = iter.cursor[offset:]
-	for i := 0; i < header.Len; i++ {
-		if i > 0 {
-			iter.cursor = iter.cursor[decoder.elemSize:]
+	if decoder.elemDecoder != nil {
+		iter.cursor = iter.cursor[offset:]
+		for i := 0; i < header.Len; i++ {
+			if i > 0 {
+				iter.cursor = iter.cursor[decoder.elemSize:]
+			}
+			decoder.elemDecoder.Decode(iter)
 		}
-		decoder.elemDecoder.Decode(iter)
 	}
 }
