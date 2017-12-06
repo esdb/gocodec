@@ -9,10 +9,6 @@ type pointerEncoder struct {
 	elemEncoder ValEncoder
 }
 
-func (encoder *pointerEncoder) EncodeEmptyInterface(ptr uintptr, subEncoder ValEncoder, stream *Stream) {
-	encoder.BaseCodec.EncodeEmptyInterface(uintptr(unsafe.Pointer(&ptr)), subEncoder, stream)
-}
-
 func (encoder *pointerEncoder) Encode(stream *Stream) {
 	pPtr := unsafe.Pointer(&stream.buf[stream.cursor])
 	ptr := *(*uintptr)(pPtr)

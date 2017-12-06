@@ -98,9 +98,9 @@ func createEncoderOfType(cfg *frozenConfig, valType reflect.Type) (ValEncoder, e
 			}
 		}
 		encoder := &structEncoder{BaseCodec: *NewBaseCodec(valType), fields: fields}
-		//if len(fields) == 1 && valType.Field(0).Type.Kind() == reflect.Ptr {
-		//	return &singlePointerFix{encoder: encoder}, nil
-		//}
+		if len(fields) == 1 && valType.Field(0).Type.Kind() == reflect.Ptr {
+			return &singlePointerFix{ValEncoder: encoder}, nil
+		}
 		return encoder, nil
 	case reflect.Slice:
 		elemEncoder, err := createEncoderOfType(cfg, valType.Elem())
@@ -117,7 +117,8 @@ func createEncoderOfType(cfg *frozenConfig, valType reflect.Type) (ValEncoder, e
 		if err != nil {
 			return nil, err
 		}
-		return &pointerEncoder{BaseCodec: *NewBaseCodec(valType), elemEncoder: elemEncoder}, nil
+		encoder := &pointerEncoder{BaseCodec: *NewBaseCodec(valType), elemEncoder: elemEncoder}
+		return &singlePointerFix{ValEncoder: encoder}, nil
 	}
 	return nil, fmt.Errorf("unsupported type %s", valType.String())
 }

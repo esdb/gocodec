@@ -19,9 +19,9 @@ func Test_single_ptr_in_struct(t *testing.T) {
 		0x8, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0,
 		0x1,
 	}, encoded[8:])
-	var decoded TestObject
-	should.Nil(gocodec.Unmarshal(encoded, &decoded))
-	should.Equal(obj, decoded)
+	decoded, err := gocodec.Unmarshal(encoded, (*TestObject)(nil))
+	should.Nil(err)
+	should.Equal(obj, *decoded.(*TestObject))
 }
 
 func Test_two_ptrs_in_struct(t *testing.T) {
@@ -40,9 +40,9 @@ func Test_two_ptrs_in_struct(t *testing.T) {
 		1,
 		1,
 	}, encoded[8:])
-	var decoded TestObject
-	should.Nil(gocodec.Unmarshal(encoded, &decoded))
-	should.Equal(obj, decoded)
+	decoded, err := gocodec.Unmarshal(encoded, (*TestObject)(nil))
+	should.Nil(err)
+	should.Equal(obj, *decoded.(*TestObject))
 }
 
 func Test_slice_in_struct(t *testing.T) {
@@ -62,7 +62,7 @@ func Test_slice_in_struct(t *testing.T) {
 		0x2, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0,
 		0x3, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0,
 	}, encoded[8:])
-	var decoded TestObject
-	should.Nil(gocodec.Unmarshal(encoded, &decoded))
-	should.Equal(obj, decoded)
+	decoded, err := gocodec.Unmarshal(encoded, (*TestObject)(nil))
+	should.Nil(err)
+	should.Equal(obj, *decoded.(*TestObject))
 }
