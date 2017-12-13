@@ -30,11 +30,3 @@ func ptrAsBytes(size int, ptr uintptr) []byte {
 		Data: ptr, Len: size, Cap: size}))
 	return valAsSlice
 }
-
-func (header *sliceHeader) DataPtr() unsafe.Pointer {
-	return unsafe.Pointer(header.Data)
-}
-
-func (header *stringHeader) DataPtr() unsafe.Pointer {
-	return unsafe.Pointer(header.Data)
-}

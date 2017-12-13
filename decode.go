@@ -9,19 +9,22 @@ import (
 )
 
 type Iterator struct {
-	cfg    *frozenConfig
-	buf    []byte
-	cursor []byte
-	Error  error
+	cfg           *frozenConfig
+	buf           []byte
+	cursor        []byte
+	baseOffset    uintptr
+	oldBaseOffset uintptr
+	Error         error
 }
 
 func (cfg *frozenConfig) NewIterator(buf []byte) *Iterator {
-	return &Iterator{cfg: cfg, buf: buf}
+	return &Iterator{cfg: cfg, buf: buf, baseOffset: uintptr(unsafe.Pointer(&buf[0]))}
 }
 
 func (iter *Iterator) Reset(buf []byte) {
 	iter.buf = buf
 	iter.cursor = nil
+	iter.baseOffset = uintptr(unsafe.Pointer(&buf[0]))
 }
 
 func (iter *Iterator) Unmarshal(nilPtr interface{}) interface{} {
@@ -31,12 +34,11 @@ func (iter *Iterator) Unmarshal(nilPtr interface{}) interface{} {
 		iter.ReportError("DecodeVal", err)
 		return nil
 	}
-	size := *(*uint32)(unsafe.Pointer(&iter.buf[0]))
-	encoded := iter.buf[8:size]
+	size := *(*uint64)(unsafe.Pointer(&iter.buf[0]))
+	encoded := iter.buf[12:size]
 	nextBuf := iter.buf[size:]
-	iter.buf = iter.buf[4:]
 	if iter.cfg.verifyChecksum {
-		crcVal := *(*uint32)(unsafe.Pointer(&iter.buf[0]))
+		crcVal := *(*uint32)(unsafe.Pointer(&iter.buf[8]))
 		crc := crc32.NewIEEE()
 		crc.Write(encoded)
 		if crc.Sum32() != crcVal {
@@ -44,10 +46,12 @@ func (iter *Iterator) Unmarshal(nilPtr interface{}) interface{} {
 			return nil
 		}
 	}
-	iter.buf = iter.buf[4:]
+	oldBaseOffset := *(*uintptr)(unsafe.Pointer(&iter.buf[16]))
+	*(*uintptr)(unsafe.Pointer(&iter.buf[16])) = iter.baseOffset
+	iter.oldBaseOffset = oldBaseOffset
 	val := nilPtr
-	(*emptyInterface)(unsafe.Pointer(&val)).word = uintptr(unsafe.Pointer(&iter.buf[0]))
-	iter.cursor = iter.buf
+	(*emptyInterface)(unsafe.Pointer(&val)).word = uintptr(unsafe.Pointer(&iter.buf[24]))
+	iter.cursor = iter.buf[24:]
 	decoder.Decode(iter)
 	iter.buf = nextBuf
 	return val
@@ -58,4 +62,13 @@ func (iter *Iterator) ReportError(operation string, err error) {
 		return
 	}
 	iter.Error = fmt.Errorf("%s: %s", operation, err)
+}
+
+func UpdateChecksum(buf []byte) {
+	size := *(*uint64)(unsafe.Pointer(&buf[0]))
+	encoded := buf[12:size]
+	crc := crc32.NewIEEE()
+	crc.Write(encoded)
+	pCrc := unsafe.Pointer(&buf[8])
+	*(*uint32)(pCrc) = crc.Sum32()
 }

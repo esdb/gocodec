@@ -10,7 +10,7 @@ func Test_float32(t *testing.T) {
 	should := require.New(t)
 	encoded, err := gocodec.Marshal(float32(100))
 	should.Nil(err)
-	should.Equal([]byte{0x0, 0x0, 0xc8, 0x42}, encoded[8:])
+	should.Equal([]byte{0x0, 0x0, 0xc8, 0x42}, encoded[24:])
 	val, err := gocodec.Unmarshal(encoded, (*float32)(nil))
 	should.Nil(err)
 	should.Equal(float32(100), *(val.(*float32)))

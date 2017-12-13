@@ -14,8 +14,7 @@ func (encoder *pointerEncoder) Encode(stream *Stream) {
 	ptr := *(*uintptr)(pPtr)
 	if ptr != 0 {
 		valAsBytes := ptrAsBytes(int(encoder.elemEncoder.Type().Size()), ptr)
-		offset := uintptr(len(stream.buf)) - stream.cursor
-		*(*uintptr)(pPtr) = offset
+		*(*uintptr)(pPtr) = uintptr(len(stream.buf))
 		stream.cursor = uintptr(len(stream.buf))
 		stream.buf = append(stream.buf, valAsBytes...)
 		encoder.elemEncoder.Encode(stream)
@@ -29,10 +28,12 @@ type pointerDecoder struct {
 
 func (decoder *pointerDecoder) Decode(iter *Iterator) {
 	pPtr := unsafe.Pointer(&iter.cursor[0])
-	offset := *(*uintptr)(pPtr)
-	if offset == 0 {
+	relOffset := *(*uintptr)(pPtr)
+	if relOffset == 0 {
 		return
 	}
+	pCursor := uintptr(pPtr)
+	offset := relOffset - (pCursor - iter.baseOffset) - iter.oldBaseOffset
 	iter.cursor = iter.cursor[offset:]
 	*(*uintptr)(pPtr) = uintptr(unsafe.Pointer(&iter.cursor[0]))
 	decoder.elemDecoder.Decode(iter)

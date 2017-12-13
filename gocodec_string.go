@@ -11,7 +11,7 @@ type stringCodec struct {
 func (codec *stringCodec) Encode(stream *Stream) {
 	pStr := unsafe.Pointer(&stream.buf[stream.cursor])
 	str := *(*string)(pStr)
-	offset := uintptr(len(stream.buf)) - stream.cursor
+	offset := uintptr(len(stream.buf))
 	header := (*stringHeader)(pStr)
 	header.Data = offset
 	stream.buf = append(stream.buf, str...)
@@ -20,6 +20,8 @@ func (codec *stringCodec) Encode(stream *Stream) {
 func (codec *stringCodec) Decode(iter *Iterator) {
 	pStr := unsafe.Pointer(&iter.cursor[0])
 	header := (*stringHeader)(pStr)
-	offset := header.Data
+	relOffset := header.Data
+	pCursor := uintptr(unsafe.Pointer(&iter.cursor[0]))
+	offset := relOffset - (pCursor - iter.baseOffset) - iter.oldBaseOffset
 	header.Data = uintptr(unsafe.Pointer(&iter.cursor[offset]))
 }

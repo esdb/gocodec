@@ -33,21 +33,21 @@ func (stream *Stream) Marshal(val interface{}) {
 		stream.ReportError("EncodeVal", err)
 		return
 	}
-	stream.buf = append(stream.buf, []byte{
-		0, 0, 0, 0, // size
-		0, 0, 0, 0, // crc32
-	}...)
 	baseCursor := len(stream.buf)
+	stream.buf = append(stream.buf, []byte{
+		0, 0, 0, 0, 0, 0, 0, 0, // size
+		0, 0, 0, 0,             // crc32
+		0, 0, 0, 0,             // signature
+		0, 0, 0, 0, 0, 0, 0, 0, // offset base
+	}...)
 	encoder.EncodeEmptyInterface(uintptr(ptrOfEmptyInterface(val)), encoder, stream)
 	if stream.Error != nil {
 		return
 	}
-	encoded := stream.buf[baseCursor:]
-	pSizeBuf := stream.buf[baseCursor-8:]
-	pSize := unsafe.Pointer(&pSizeBuf[0])
-	*(*uint32)(pSize) = uint32(len(encoded)) + 8
-	pCrcBuf := stream.buf[baseCursor-4:]
-	pCrc := unsafe.Pointer(&pCrcBuf[0])
+	encoded := stream.buf[baseCursor+12:]
+	pSize := unsafe.Pointer(&stream.buf[baseCursor])
+	*(*uint64)(pSize) = uint64(len(stream.buf) - baseCursor)
+	pCrc := unsafe.Pointer(&stream.buf[baseCursor+8])
 	crc := crc32.NewIEEE()
 	crc.Write(encoded)
 	*(*uint32)(pCrc) = crc.Sum32()

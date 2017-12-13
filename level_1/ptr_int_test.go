@@ -11,8 +11,12 @@ func Test_ptr_int(t *testing.T) {
 	val := 100
 	encoded, err := gocodec.Marshal(&val)
 	should.Nil(err)
-	should.Equal([]byte{0x8, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 100, 0, 0, 0, 0, 0, 0, 0}, encoded[8:])
+	should.Equal([]byte{0x20, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 100, 0, 0, 0, 0, 0, 0, 0}, encoded[24:])
 	decoded, err := gocodec.Unmarshal(encoded, (**int)(nil))
+	should.Nil(err)
+	should.Equal(100, **decoded.(**int))
+	gocodec.UpdateChecksum(encoded)
+	decoded, err = gocodec.Unmarshal(encoded, (**int)(nil))
 	should.Nil(err)
 	should.Equal(100, **decoded.(**int))
 }

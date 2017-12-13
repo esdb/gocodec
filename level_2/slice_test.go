@@ -13,10 +13,10 @@ func Test_string_slice(t *testing.T) {
 	encoded, err := gocodec.Marshal([]string{"h", "i"})
 	should.Nil(err)
 	should.Equal([]byte{
-		24, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, // sliceHeader
-		32, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0,                         // string header
-		17, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0,                         // string header
-		'h', 'i'}, encoded[8:])
+		0x30, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, // sliceHeader
+		0x50, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0,                         // string header
+		0x51, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0,                         // string header
+		'h', 'i'}, encoded[24:])
 	decoded, err := gocodec.Unmarshal(encoded, (*[]string)(nil))
 	should.Nil(err)
 	should.Equal([]string{"h", "i"}, *decoded.(*[]string))
@@ -24,7 +24,10 @@ func Test_string_slice(t *testing.T) {
 
 func Benchmark_string_slice(b *testing.B) {
 	data := []string{"hello", "world"}
-	gocEncoded, _ := gocodec.Marshal(data)
+	gocEncoded, err := gocodec.Marshal(data)
+	if err != nil {
+		b.Error(err)
+	}
 	jsonEncoded, _ := jsoniter.Marshal(data)
 	b.Run("goc encode", func(b *testing.B) {
 		b.ReportAllocs()
@@ -36,7 +39,7 @@ func Benchmark_string_slice(b *testing.B) {
 	})
 	b.Run("goc decode", func(b *testing.B) {
 		b.ReportAllocs()
-		iter := gocodec.DefaultConfig.NewIterator(nil)
+		iter := gocodec.DefaultConfig.NewIterator(gocEncoded)
 		for i := 0; i < b.N; i++ {
 			iter.Reset(append(([]byte)(nil), gocEncoded...))
 			iter.Unmarshal(&data)
