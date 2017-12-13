@@ -9,8 +9,8 @@ type BaseCodec struct {
 	signature uint32
 }
 
-func NewBaseCodec(valType reflect.Type) *BaseCodec {
-	return &BaseCodec{valType: valType, signature: 0}
+func NewBaseCodec(valType reflect.Type, signature uint32) *BaseCodec {
+	return &BaseCodec{valType: valType, signature: signature}
 }
 
 func (codec *BaseCodec) Encode(stream *Stream) {

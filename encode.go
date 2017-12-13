@@ -47,6 +47,8 @@ func (stream *Stream) Marshal(val interface{}) {
 	encoded := stream.buf[baseCursor+12:]
 	pSize := unsafe.Pointer(&stream.buf[baseCursor])
 	*(*uint64)(pSize) = uint64(len(stream.buf) - baseCursor)
+	pSig := unsafe.Pointer(&stream.buf[baseCursor+12])
+	*(*uint32)(pSig) = encoder.Signature()
 	pCrc := unsafe.Pointer(&stream.buf[baseCursor+8])
 	crc := crc32.NewIEEE()
 	crc.Write(encoded)

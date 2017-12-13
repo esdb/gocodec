@@ -12,7 +12,7 @@ type Config struct {
 
 type API interface {
 	Marshal(val interface{}) ([]byte, error)
-	Unmarshal(buf []byte, nilPtr interface{}) (interface{}, error)
+	Unmarshal(buf []byte, candidatePointers ...interface{}) (interface{}, error)
 	NewIterator(buf []byte) *Iterator
 	NewStream(buf []byte) *Stream
 }
@@ -51,8 +51,16 @@ func Marshal(obj interface{}) ([]byte, error) {
 	return DefaultConfig.Marshal(obj)
 }
 
-func Unmarshal(buf []byte, objPtr interface{}) (interface{}, error) {
-	return DefaultConfig.Unmarshal(buf, objPtr)
+func Unmarshal(buf []byte, candidatePointers ...interface{}) (interface{}, error) {
+	return DefaultConfig.Unmarshal(buf, candidatePointers...)
+}
+
+func NewIterator(buf []byte) *Iterator {
+	return DefaultConfig.NewIterator(buf)
+}
+
+func NewStream(buf []byte) *Stream {
+	return DefaultConfig.NewStream(buf)
 }
 
 func (cfg *frozenConfig) Marshal(val interface{}) ([]byte, error) {
@@ -61,8 +69,8 @@ func (cfg *frozenConfig) Marshal(val interface{}) ([]byte, error) {
 	return stream.Buffer(), stream.Error
 }
 
-func (cfg *frozenConfig) Unmarshal(buf []byte, nilPtr interface{}) (interface{}, error) {
+func (cfg *frozenConfig) Unmarshal(buf []byte, candidatePointers ...interface{}) (interface{}, error) {
 	iter := cfg.NewIterator(buf)
-	val := iter.Unmarshal(nilPtr)
+	val := iter.Unmarshal(candidatePointers...)
 	return val, iter.Error
 }
