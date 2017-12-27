@@ -53,3 +53,22 @@ func Test_struct_within_struct(t *testing.T) {
 	should.Nil(err)
 	should.Equal(obj, *decoded.(*TestObject))
 }
+
+func Test_multiple_struct(t *testing.T) {
+	should := require.New(t)
+	type TestObj struct {
+		Field1 []int
+		Field2 [][]byte
+	}
+	stream := gocodec.NewStream(nil)
+	stream.Marshal(TestObj{Field2:[][]byte{[]byte("hello")}})
+	stream.Marshal(TestObj{Field2:[][]byte{[]byte("world")}})
+	should.Nil(stream.Error)
+	iter := gocodec.NewIterator(stream.Buffer())
+	obj := iter.Unmarshal((*TestObj)(nil))
+	should.Nil(iter.Error)
+	should.Equal([][]byte{[]byte("hello")}, obj.(*TestObj).Field2)
+	obj = iter.Unmarshal((*TestObj)(nil))
+	should.Nil(iter.Error)
+	should.Equal([][]byte{[]byte("world")}, obj.(*TestObj).Field2)
+}

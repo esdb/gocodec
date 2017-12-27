@@ -6,6 +6,7 @@ import (
 	"unsafe"
 	"hash/crc32"
 	"errors"
+	"io"
 )
 
 type Iterator struct {
@@ -18,17 +19,54 @@ type Iterator struct {
 }
 
 func (cfg *frozenConfig) NewIterator(buf []byte) *Iterator {
-	return &Iterator{cfg: cfg, buf: buf, baseOffset: uintptr(unsafe.Pointer(&buf[0]))}
+	baseOffset := uintptr(0)
+	if buf != nil {
+		baseOffset = uintptr(unsafe.Pointer(&buf[0]))
+	}
+	return &Iterator{cfg: cfg, buf: buf, baseOffset: baseOffset}
 }
 
 func (iter *Iterator) Reset(buf []byte) {
 	iter.buf = buf
 	iter.cursor = nil
 	iter.baseOffset = uintptr(unsafe.Pointer(&buf[0]))
+	iter.Error = nil
+}
+
+func (iter *Iterator) NextSize() uint64 {
+	if len(iter.buf) < 24 {
+		return 0
+	}
+	return *(*uint64)(unsafe.Pointer(&iter.buf[0]))
+}
+
+func (iter *Iterator) Skip() []byte {
+	size := iter.NextSize()
+	skipped := iter.buf[:size]
+	iter.buf = iter.buf[size:]
+	return skipped
+}
+
+func (iter *Iterator) Copy(candidatePointers ...interface{}) interface{} {
+	size := iter.NextSize()
+	if size == 0 {
+		iter.Error = io.EOF
+		return nil
+	}
+	copied := append([]byte(nil), iter.buf[:size]...)
+	nextBuf := iter.buf[size:]
+	iter.Reset(copied)
+	result := iter.Unmarshal(candidatePointers...)
+	iter.Reset(nextBuf)
+	return result
 }
 
 func (iter *Iterator) Unmarshal(candidatePointers ...interface{}) interface{} {
-	size := *(*uint64)(unsafe.Pointer(&iter.buf[0]))
+	size := iter.NextSize()
+	if size == 0 {
+		iter.Error = io.EOF
+		return nil
+	}
 	encoded := iter.buf[12:size]
 	nextBuf := iter.buf[size:]
 	if iter.cfg.verifyChecksum {
@@ -75,6 +113,10 @@ func (iter *Iterator) ReportError(operation string, err error) {
 		return
 	}
 	iter.Error = fmt.Errorf("%s: %s", operation, err)
+}
+
+func (iter *Iterator) Buffer() []byte {
+	return iter.buf
 }
 
 func UpdateChecksum(buf []byte) {

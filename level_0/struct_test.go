@@ -43,3 +43,21 @@ func Test_struct_signature(t *testing.T) {
 	should.Nil(err)
 	should.Equal(obj, *decoded.(*TestVersion1))
 }
+
+func Test_multiple_struct(t *testing.T) {
+	should := require.New(t)
+	type TestObj struct {
+		Field int
+	}
+	stream := gocodec.NewStream(nil)
+	stream.Marshal(TestObj{1})
+	stream.Marshal(TestObj{2})
+	should.Nil(stream.Error)
+	iter := gocodec.NewIterator(stream.Buffer())
+	obj := iter.Unmarshal((*TestObj)(nil))
+	should.Nil(iter.Error)
+	should.Equal(1, obj.(*TestObj).Field)
+	obj = iter.Unmarshal((*TestObj)(nil))
+	should.Nil(iter.Error)
+	should.Equal(2, obj.(*TestObj).Field)
+}

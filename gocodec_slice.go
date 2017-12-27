@@ -13,8 +13,11 @@ type sliceEncoder struct {
 func (encoder *sliceEncoder) Encode(stream *Stream) {
 	pSlice := unsafe.Pointer(&stream.buf[stream.cursor])
 	header := (*sliceHeader)(pSlice)
+	if header.Len == 0 {
+		return
+	}
 	header.Cap = header.Len
-	byteSlice := ptrAsBytes(encoder.elemSize * header.Len, header.Data)
+	byteSlice := ptrAsBytes(encoder.elemSize*header.Len, header.Data)
 	// replace actual pointer with relative offset
 	header.Data = uintptr(len(stream.buf))
 	stream.cursor = uintptr(len(stream.buf)) // start of the bytes
@@ -36,6 +39,9 @@ type sliceDecoder struct {
 func (decoder *sliceDecoder) Decode(iter *Iterator) {
 	pSlice := unsafe.Pointer(&iter.cursor[0])
 	header := (*sliceHeader)(pSlice)
+	if header.Len == 0 {
+		return
+	}
 	relOffset := header.Data
 	pCursor := uintptr(unsafe.Pointer(&iter.cursor[0]))
 	offset := relOffset - (pCursor - iter.baseOffset) - iter.oldBaseOffset
