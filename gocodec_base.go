@@ -9,7 +9,7 @@ type BaseCodec struct {
 	signature uint32
 }
 
-func NewBaseCodec(valType reflect.Type, signature uint32) *BaseCodec {
+func newBaseCodec(valType reflect.Type, signature uint32) *BaseCodec {
 	return &BaseCodec{valType: valType, signature: signature}
 }
 
