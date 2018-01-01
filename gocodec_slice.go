@@ -24,7 +24,9 @@ func (encoder *sliceEncoder) Encode(stream *Stream) {
 	stream.buf = append(stream.buf, byteSlice...)
 	if encoder.elemEncoder != nil {
 		endCursor := uintptr(len(stream.buf)) // end of the bytes
-		for ; stream.cursor < endCursor; stream.cursor += uintptr(encoder.elemSize) {
+		cursor := stream.cursor
+		for ; cursor < endCursor; cursor += uintptr(encoder.elemSize) {
+			stream.cursor = cursor
 			encoder.elemEncoder.Encode(stream)
 		}
 	}
@@ -47,11 +49,12 @@ func (decoder *sliceDecoder) Decode(iter *Iterator) {
 	offset := relOffset - (pCursor - iter.baseOffset) - iter.oldBaseOffset
 	header.Data = uintptr(unsafe.Pointer(&iter.cursor[offset]))
 	if decoder.elemDecoder != nil {
-		iter.cursor = iter.cursor[offset:]
+		cursor := iter.cursor[offset:]
 		for i := 0; i < header.Len; i++ {
 			if i > 0 {
-				iter.cursor = iter.cursor[decoder.elemSize:]
+				cursor = cursor[decoder.elemSize:]
 			}
+			iter.cursor = cursor
 			decoder.elemDecoder.Decode(iter)
 		}
 	}

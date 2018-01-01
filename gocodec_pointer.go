@@ -2,6 +2,8 @@ package gocodec
 
 import (
 	"unsafe"
+	"github.com/v2pro/plz/countlog"
+	"errors"
 )
 
 type pointerEncoder struct {
@@ -27,6 +29,16 @@ type pointerDecoder struct {
 }
 
 func (decoder *pointerDecoder) Decode(iter *Iterator) {
+	if countlog.ShouldLog(countlog.LevelDebug) {
+		defer func() {
+			recovered := recover()
+			countlog.LogPanic(recovered, "valueType", decoder.valType)
+			if recovered != nil {
+				iter.ReportError("pointerDecoder", errors.New(
+					"decode failed at type: "+decoder.valType.String()))
+			}
+		}()
+	}
 	pPtr := unsafe.Pointer(&iter.cursor[0])
 	relOffset := *(*uintptr)(pPtr)
 	if relOffset == 0 {

@@ -22,6 +22,25 @@ func Test_string_slice(t *testing.T) {
 	should.Equal([]string{"h", "i"}, *decoded.(*[]string))
 }
 
+func Test_ptr_slice(t *testing.T) {
+	type TestObject struct {
+		Field1 int
+		Field2 int
+	}
+	should := require.New(t)
+	encoded, err := gocodec.Marshal([]*TestObject{{1, 2}, {3, 4}})
+	should.Nil(err)
+	should.Equal([]byte{
+		48, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0,
+		64, 0, 0, 0, 0, 0, 0, 0, 80, 0, 0, 0, 0, 0, 0, 0,
+		1, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, // [0]
+		3, 0, 0, 0, 0, 0, 0, 0, 4, 0, 0, 0, 0, 0, 0, 0, // [1]
+	}, encoded[24:])
+	decoded, err := gocodec.Unmarshal(encoded, (*[]*TestObject)(nil))
+	should.Nil(err)
+	should.Equal([]*TestObject{{1, 2}, {3, 4}}, *decoded.(*[]*TestObject))
+}
+
 func Benchmark_string_slice(b *testing.B) {
 	data := []string{"hello", "world"}
 	gocEncoded, err := gocodec.Marshal(data)

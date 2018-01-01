@@ -7,6 +7,8 @@ import (
 	"hash/crc32"
 	"errors"
 	"io"
+	"github.com/v2pro/plz/countlog"
+	"encoding/hex"
 )
 
 type Iterator struct {
@@ -68,6 +70,17 @@ func (iter *Iterator) Unmarshal(candidatePointers ...interface{}) interface{} {
 		return nil
 	}
 	encoded := iter.buf[12:size]
+	thisBuf := iter.buf[:size]
+	defer func() {
+		recovered := recover()
+		if recovered != nil {
+			countlog.Fatal("event!gocodec.failed to unmarshal",
+				"err", recovered,
+				"buf", hex.EncodeToString(thisBuf),
+				"stacktrace", countlog.ProvideStacktrace)
+			iter.ReportError("Unmarshal", fmt.Errorf("%v", recovered))
+		}
+	}()
 	nextBuf := iter.buf[size:]
 	if iter.cfg.verifyChecksum {
 		crcVal := *(*uint32)(unsafe.Pointer(&iter.buf[8]))
