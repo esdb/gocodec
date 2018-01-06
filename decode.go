@@ -82,15 +82,6 @@ func (iter *Iterator) Unmarshal(candidatePointers ...interface{}) interface{} {
 		}
 	}()
 	nextBuf := iter.buf[size:]
-	if iter.cfg.verifyChecksum {
-		crcVal := *(*uint32)(unsafe.Pointer(&iter.buf[8]))
-		crc := crc32.NewIEEE()
-		crc.Write(encoded)
-		if crc.Sum32() != crcVal {
-			iter.ReportError("DecodeVal", errors.New("crc32 verification failed"))
-			return nil
-		}
-	}
 	sig := *(*uint32)(unsafe.Pointer(&iter.buf[12]))
 	var decoder ValDecoder
 	var val interface{}
@@ -112,6 +103,19 @@ func (iter *Iterator) Unmarshal(candidatePointers ...interface{}) interface{} {
 		return nil
 	}
 	oldBaseOffset := *(*uintptr)(unsafe.Pointer(&iter.buf[16]))
+	if oldBaseOffset == iter.baseOffset {
+		(*emptyInterface)(unsafe.Pointer(&val)).word = uintptr(unsafe.Pointer(&iter.buf[24]))
+		return val
+	}
+	if iter.cfg.verifyChecksum {
+		crcVal := *(*uint32)(unsafe.Pointer(&iter.buf[8]))
+		crc := crc32.NewIEEE()
+		crc.Write(encoded)
+		if crc.Sum32() != crcVal {
+			iter.ReportError("DecodeVal", errors.New("crc32 verification failed"))
+			return nil
+		}
+	}
 	*(*uintptr)(unsafe.Pointer(&iter.buf[16])) = iter.baseOffset
 	iter.oldBaseOffset = oldBaseOffset
 	(*emptyInterface)(unsafe.Pointer(&val)).word = uintptr(unsafe.Pointer(&iter.buf[24]))

@@ -27,6 +27,8 @@ func Test_bloomfilter(t *testing.T) {
 	f2 := decoded.(*bloom.BloomFilter)
 	should.True(f2.Test([]byte("hello")))
 	should.False(f2.Test([]byte("hi")))
+	decoded, err = gocodec.Unmarshal(encoded, (*bloom.BloomFilter)(nil))
+	should.Nil(err)
 }
 
 func Test_mmap(t *testing.T) {
