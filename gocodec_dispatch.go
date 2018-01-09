@@ -7,12 +7,12 @@ import (
 	"fmt"
 )
 
-func (cfg *frozenConfig) addDecoderToCache(cacheKey reflect.Type, decoder ValDecoder) {
+func (cfg *frozenConfig) addDecoderToCache(cacheKey reflect.Type, decoder RootDecoder) {
 	done := false
 	for !done {
 		ptr := atomic.LoadPointer(&cfg.decoderCache)
-		cache := *(*map[reflect.Type]ValDecoder)(ptr)
-		copied := map[reflect.Type]ValDecoder{}
+		cache := *(*map[reflect.Type]RootDecoder)(ptr)
+		copied := map[reflect.Type]RootDecoder{}
 		for k, v := range cache {
 			copied[k] = v
 		}
@@ -35,9 +35,9 @@ func (cfg *frozenConfig) addEncoderToCache(cacheKey reflect.Type, encoder RootEn
 	}
 }
 
-func (cfg *frozenConfig) getDecoderFromCache(cacheKey reflect.Type) ValDecoder {
+func (cfg *frozenConfig) getDecoderFromCache(cacheKey reflect.Type) RootDecoder {
 	ptr := atomic.LoadPointer(&cfg.decoderCache)
-	cache := *(*map[reflect.Type]ValDecoder)(ptr)
+	cache := *(*map[reflect.Type]RootDecoder)(ptr)
 	return cache[cacheKey]
 }
 
@@ -81,18 +81,23 @@ func wrapRootEncoder(encoder ValEncoder) RootEncoder {
 	return &rootEncoder
 }
 
-func decoderOfType(cfg *frozenConfig, valType reflect.Type) (ValDecoder, error) {
+func decoderOfType(cfg *frozenConfig, valType reflect.Type) (RootDecoder, error) {
 	cacheKey := valType
-	decoder := cfg.getDecoderFromCache(cacheKey)
-	if decoder != nil {
-		return decoder, nil
+	rootDecoder := cfg.getDecoderFromCache(cacheKey)
+	if rootDecoder != nil {
+		return rootDecoder, nil
 	}
 	decoder, err := createDecoderOfType(cfg, valType)
 	if err != nil {
 		return nil, err
 	}
-	cfg.addDecoderToCache(cacheKey, decoder)
-	return decoder, err
+	if cfg.readonlyDecode && decoder.HasPointer() {
+		rootDecoder = &rootDecoderWithCopy{valType, decoder.Signature(), decoder}
+	} else {
+		rootDecoder = &rootDecoderWithoutCopy{valType, decoder.Signature(), decoder}
+	}
+	cfg.addDecoderToCache(cacheKey, rootDecoder)
+	return rootDecoder, err
 }
 
 func createEncoderOfType(cfg *frozenConfig, valType reflect.Type) (ValEncoder, error) {

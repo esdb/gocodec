@@ -2,7 +2,6 @@ package gocodec
 
 import (
 	"reflect"
-	"unsafe"
 )
 
 type BaseCodec struct {
@@ -18,15 +17,7 @@ func (codec *BaseCodec) Encode(stream *Stream) {
 	panic("not implemented")
 }
 
-func (codec *BaseCodec) EncodeEmptyInterface(ptr unsafe.Pointer, stream *Stream) {
-	panic("not implemented")
-}
-
 func (codec *BaseCodec) Decode(iter *Iterator) {
-	panic("not implemented")
-}
-
-func (codec *BaseCodec) DecodeEmptyInterface(ptr unsafe.Pointer, iter *Iterator) {
 	panic("not implemented")
 }
 

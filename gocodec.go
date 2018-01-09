@@ -33,11 +33,16 @@ type RootEncoder interface {
 
 type ValDecoder interface {
 	Decode(iter *Iterator)
-	DecodeEmptyInterface(ptr unsafe.Pointer, iter *Iterator)
 	Type() reflect.Type
 	IsNoop() bool
 	Signature() uint32
 	HasPointer() bool
+}
+
+type RootDecoder interface {
+	Type() reflect.Type
+	Signature() uint32
+	DecodeEmptyInterface(ptr *emptyInterface, iter *Iterator)
 }
 
 type frozenConfig struct {
@@ -49,8 +54,8 @@ type frozenConfig struct {
 
 func (cfg Config) Froze() API {
 	api := &frozenConfig{verifyChecksum: cfg.VerifyChecksum, readonlyDecode: cfg.ReadonlyDecode}
-	atomic.StorePointer(&api.decoderCache, unsafe.Pointer(&map[string]ValDecoder{}))
-	atomic.StorePointer(&api.encoderCache, unsafe.Pointer(&map[string]ValEncoder{}))
+	atomic.StorePointer(&api.decoderCache, unsafe.Pointer(&map[string]RootDecoder{}))
+	atomic.StorePointer(&api.encoderCache, unsafe.Pointer(&map[string]RootEncoder{}))
 	return api
 }
 

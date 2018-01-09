@@ -77,7 +77,7 @@ func (iter *Iterator) Unmarshal(candidatePointers ...interface{}) interface{} {
 	}()
 	nextBuf := iter.buf[size:]
 	sig := *(*uint32)(unsafe.Pointer(&iter.buf[12]))
-	var decoder ValDecoder
+	var decoder RootDecoder
 	var val interface{}
 	if len(candidatePointers) == 1 {
 		candidatePointer := candidatePointers[0]
@@ -121,20 +121,7 @@ func (iter *Iterator) Unmarshal(candidatePointers ...interface{}) interface{} {
 			return nil
 		}
 	}
-	if iter.cfg.readonlyDecode {
-		if decoder.HasPointer() {
-			iter.self = append([]byte(nil), iter.buf[16:16 + decoder.Type().Size()]...)
-		} else {
-			iter.self = iter.buf[16:]
-		}
-		(*emptyInterface)(unsafe.Pointer(&val)).word = uintptr(unsafe.Pointer(&iter.self[0]))
-		iter.cursor = iter.buf[16:]
-	} else {
-		(*emptyInterface)(unsafe.Pointer(&val)).word = uintptr(unsafe.Pointer(&iter.buf[16]))
-		iter.self = iter.buf[16:]
-		iter.cursor = iter.buf[16:]
-	}
-	decoder.Decode(iter)
+	decoder.DecodeEmptyInterface((*emptyInterface)(unsafe.Pointer(&val)), iter)
 	iter.buf = nextBuf
 	return val
 }

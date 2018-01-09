@@ -22,26 +22,48 @@ func (encoder *rootEncoder) Signature() uint32 {
 	return encoder.signature
 }
 
-func (encoder *rootEncoder) Encode(stream *Stream) {
-	panic("not implemented")
-}
-
 func (encoder *rootEncoder) Type() reflect.Type {
 	return encoder.valType
 }
 
-func (encoder *rootEncoder) IsNoop() bool {
-	panic("not implemented")
+type rootDecoderWithCopy struct {
+	valType   reflect.Type
+	signature uint32
+	decoder   ValDecoder
 }
 
-type rootDecoder struct {
+func (decoder *rootDecoderWithCopy) Signature() uint32 {
+	return decoder.signature
 }
 
-type verifyChecksumRootDecoder struct {
+func (decoder *rootDecoderWithCopy) Type() reflect.Type {
+	return decoder.valType
 }
 
-type readonlyRootDecoder struct {
+func (decoder *rootDecoderWithCopy) DecodeEmptyInterface(ptr *emptyInterface, iter *Iterator) {
+	iter.self = append([]byte(nil), iter.buf[16:16+decoder.Type().Size()]...)
+	ptr.word = uintptr(unsafe.Pointer(&iter.self[0]))
+	iter.cursor = iter.buf[16:]
+	decoder.decoder.Decode(iter)
 }
 
-type readonlyVerifyChecksumRootDecoder struct {
+type rootDecoderWithoutCopy struct {
+	valType   reflect.Type
+	signature uint32
+	decoder   ValDecoder
+}
+
+func (decoder *rootDecoderWithoutCopy) Signature() uint32 {
+	return decoder.signature
+}
+
+func (decoder *rootDecoderWithoutCopy) Type() reflect.Type {
+	return decoder.valType
+}
+
+func (decoder *rootDecoderWithoutCopy) DecodeEmptyInterface(ptr *emptyInterface, iter *Iterator) {
+	ptr.word = uintptr(unsafe.Pointer(&iter.buf[16]))
+	iter.self = iter.buf[16:]
+	iter.cursor = iter.buf[16:]
+	decoder.decoder.Decode(iter)
 }
