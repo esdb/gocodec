@@ -6,7 +6,7 @@ import (
 )
 
 type BaseCodec struct {
-	valType reflect.Type
+	valType   reflect.Type
 	signature uint32
 }
 
@@ -15,16 +15,19 @@ func newBaseCodec(valType reflect.Type, signature uint32) *BaseCodec {
 }
 
 func (codec *BaseCodec) Encode(stream *Stream) {
+	panic("not implemented")
 }
 
-func (codec *BaseCodec) EncodeEmptyInterface(ptr unsafe.Pointer, encoder ValEncoder, stream *Stream) {
-	stream.cursor = uintptr(len(stream.buf))
-	valAsSlice := ptrAsBytes(int(codec.valType.Size()), uintptr(ptr))
-	stream.buf = append(stream.buf, valAsSlice...)
-	encoder.Encode(stream)
+func (codec *BaseCodec) EncodeEmptyInterface(ptr unsafe.Pointer, stream *Stream) {
+	panic("not implemented")
 }
 
 func (codec *BaseCodec) Decode(iter *Iterator) {
+	panic("not implemented")
+}
+
+func (codec *BaseCodec) DecodeEmptyInterface(ptr unsafe.Pointer, iter *Iterator) {
+	panic("not implemented")
 }
 
 func (codec *BaseCodec) Type() reflect.Type {
@@ -49,4 +52,10 @@ type NoopCodec struct {
 
 func (codec *NoopCodec) IsNoop() bool {
 	return true
+}
+
+func (codec *NoopCodec) Decode(iter *Iterator) {
+}
+
+func (codec *NoopCodec) Encode(stream *Stream) {
 }

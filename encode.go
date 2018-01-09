@@ -39,7 +39,7 @@ func (stream *Stream) Marshal(val interface{}) uint64 {
 		0, 0, 0, 0,             // crc32
 		0, 0, 0, 0,             // signature
 	}...)
-	encoder.EncodeEmptyInterface(ptrOfEmptyInterface(val), encoder, stream)
+	encoder.EncodeEmptyInterface(ptrOfEmptyInterface(val), stream)
 	if stream.Error != nil {
 		return 0
 	}

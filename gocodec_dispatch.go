@@ -21,12 +21,12 @@ func (cfg *frozenConfig) addDecoderToCache(cacheKey reflect.Type, decoder ValDec
 	}
 }
 
-func (cfg *frozenConfig) addEncoderToCache(cacheKey reflect.Type, encoder ValEncoder) {
+func (cfg *frozenConfig) addEncoderToCache(cacheKey reflect.Type, encoder RootEncoder) {
 	done := false
 	for !done {
 		ptr := atomic.LoadPointer(&cfg.encoderCache)
-		cache := *(*map[reflect.Type]ValEncoder)(ptr)
-		copied := map[reflect.Type]ValEncoder{}
+		cache := *(*map[reflect.Type]RootEncoder)(ptr)
+		copied := map[reflect.Type]RootEncoder{}
 		for k, v := range cache {
 			copied[k] = v
 		}
@@ -41,24 +41,44 @@ func (cfg *frozenConfig) getDecoderFromCache(cacheKey reflect.Type) ValDecoder {
 	return cache[cacheKey]
 }
 
-func (cfg *frozenConfig) getEncoderFromCache(cacheKey reflect.Type) ValEncoder {
+func (cfg *frozenConfig) getEncoderFromCache(cacheKey reflect.Type) RootEncoder {
 	ptr := atomic.LoadPointer(&cfg.encoderCache)
-	cache := *(*map[reflect.Type]ValEncoder)(ptr)
+	cache := *(*map[reflect.Type]RootEncoder)(ptr)
 	return cache[cacheKey]
 }
 
-func encoderOfType(cfg *frozenConfig, valType reflect.Type) (ValEncoder, error) {
+func encoderOfType(cfg *frozenConfig, valType reflect.Type) (RootEncoder, error) {
 	cacheKey := valType
-	encoder := cfg.getEncoderFromCache(cacheKey)
-	if encoder != nil {
-		return encoder, nil
+	rootEncoder := cfg.getEncoderFromCache(cacheKey)
+	if rootEncoder != nil {
+		return rootEncoder, nil
 	}
 	encoder, err := createEncoderOfType(cfg, valType)
 	if err != nil {
 		return nil, err
 	}
-	cfg.addEncoderToCache(cacheKey, encoder)
-	return encoder, err
+	rootEncoder = wrapRootEncoder(encoder)
+	cfg.addEncoderToCache(cacheKey, rootEncoder)
+	return rootEncoder, err
+}
+
+func wrapRootEncoder(encoder ValEncoder) RootEncoder {
+	valType := encoder.Type()
+	valKind := valType.Kind()
+	rootEncoder := rootEncoder{valType, encoder.Signature(), encoder}
+	switch valKind {
+	case reflect.Struct:
+		if valType.NumField() == 1 && valType.Field(0).Type.Kind() == reflect.Ptr {
+			return &singlePointerFix{rootEncoder}
+		}
+	case reflect.Array:
+		if valType.Len() == 1 && valType.Elem().Kind() == reflect.Ptr {
+			return &singlePointerFix{rootEncoder}
+		}
+	case reflect.Ptr:
+		return &singlePointerFix{rootEncoder}
+	}
+	return &rootEncoder
 }
 
 func decoderOfType(cfg *frozenConfig, valType reflect.Type) (ValDecoder, error) {
@@ -101,9 +121,6 @@ func createEncoderOfType(cfg *frozenConfig, valType reflect.Type) (ValEncoder, e
 			}
 		}
 		encoder := &structEncoder{BaseCodec: *newBaseCodec(valType, signature), fields: fields}
-		if len(fields) == 1 && valType.Field(0).Type.Kind() == reflect.Ptr {
-			return &singlePointerFix{ValEncoder: encoder}, nil
-		}
 		return encoder, nil
 	case reflect.Array:
 		signature := uint32(valKind)
@@ -120,9 +137,6 @@ func createEncoderOfType(cfg *frozenConfig, valType reflect.Type) (ValEncoder, e
 			arrayLength: valType.Len(),
 			elementSize: valType.Elem().Size(),
 			elemEncoder: elemEncoder,
-		}
-		if encoder.arrayLength == 1 && valType.Elem().Kind() == reflect.Ptr {
-			return &singlePointerFix{ValEncoder: encoder}, nil
 		}
 		return encoder, nil
 	case reflect.Slice:
@@ -145,7 +159,7 @@ func createEncoderOfType(cfg *frozenConfig, valType reflect.Type) (ValEncoder, e
 		}
 		signature = 31*signature + elemEncoder.Signature()
 		encoder := &pointerEncoder{BaseCodec: *newBaseCodec(valType, signature), elemEncoder: elemEncoder}
-		return &singlePointerFix{ValEncoder: encoder}, nil
+		return encoder, nil
 	}
 	return nil, fmt.Errorf("unsupported type %s", valType.String())
 }

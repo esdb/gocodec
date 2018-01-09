@@ -20,14 +20,20 @@ type API interface {
 
 type ValEncoder interface {
 	Encode(stream *Stream)
-	EncodeEmptyInterface(ptr unsafe.Pointer, encoder ValEncoder, stream *Stream)
 	Type() reflect.Type
 	IsNoop() bool
 	Signature() uint32
 }
 
+type RootEncoder interface {
+	Type() reflect.Type
+	Signature() uint32
+	EncodeEmptyInterface(ptr unsafe.Pointer, stream *Stream)
+}
+
 type ValDecoder interface {
 	Decode(iter *Iterator)
+	DecodeEmptyInterface(ptr unsafe.Pointer, iter *Iterator)
 	Type() reflect.Type
 	IsNoop() bool
 	Signature() uint32
