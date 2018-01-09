@@ -32,14 +32,14 @@ func (encoder *sliceEncoder) Encode(stream *Stream) {
 	}
 }
 
-type sliceDecoder struct {
+type sliceDecoderWithoutCopy struct {
 	BaseCodec
 	elemSize    int
 	elemDecoder ValDecoder
 }
 
-func (decoder *sliceDecoder) Decode(iter *Iterator) {
-	pSlice := unsafe.Pointer(&iter.cursor[0])
+func (decoder *sliceDecoderWithoutCopy) Decode(iter *Iterator) {
+	pSlice := unsafe.Pointer(&iter.self[0])
 	header := (*sliceHeader)(pSlice)
 	if header.Len == 0 {
 		return
@@ -55,7 +55,45 @@ func (decoder *sliceDecoder) Decode(iter *Iterator) {
 				cursor = cursor[decoder.elemSize:]
 			}
 			iter.cursor = cursor
+			iter.self = iter.cursor
 			decoder.elemDecoder.Decode(iter)
 		}
 	}
+}
+
+func (decoder *sliceDecoderWithoutCopy) HasPointer() bool {
+	return true
+}
+
+type sliceDecoderWithCopy struct {
+	BaseCodec
+	elemSize    int
+	elemDecoder ValDecoder
+}
+
+func (decoder *sliceDecoderWithCopy) Decode(iter *Iterator) {
+	pSlice := unsafe.Pointer(&iter.self[0])
+	header := (*sliceHeader)(pSlice)
+	if header.Len == 0 {
+		return
+	}
+	relOffset := header.Data
+	pCursor := uintptr(unsafe.Pointer(&iter.cursor[0]))
+	offset := relOffset - (pCursor - iter.baseOffset) - iter.oldBaseOffset
+	cursor := iter.cursor[offset:]
+	copied := append([]byte(nil), cursor[:decoder.elemSize*header.Len]...)
+	header.Data = uintptr(unsafe.Pointer(&copied[0]))
+	for i := 0; i < header.Len; i++ {
+		if i > 0 {
+			cursor = cursor[decoder.elemSize:]
+			copied = copied[decoder.elemSize:]
+		}
+		iter.cursor = cursor
+		iter.self = copied
+		decoder.elemDecoder.Decode(iter)
+	}
+}
+
+func (decoder *sliceDecoderWithCopy) HasPointer() bool {
+	return true
 }

@@ -38,6 +38,10 @@ func (codec *BaseCodec) Signature() uint32 {
 	return codec.signature
 }
 
+func (codec *BaseCodec) HasPointer() bool {
+	return false
+}
+
 type NoopCodec struct {
 	BaseCodec
 }

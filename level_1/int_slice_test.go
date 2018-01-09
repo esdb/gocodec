@@ -15,6 +15,8 @@ func Test_int_slice(t *testing.T) {
 		1, 0, 0, 0, 0, 0, 0, 0,
 		2, 0, 0, 0, 0, 0, 0, 0,
 		3, 0, 0, 0, 0, 0, 0, 0}, encoded[24:])
-	decoded, err := gocodec.Unmarshal(encoded, (*[]int)(nil))
+	decoded, err := gocodec.ReadonlyConfig.Unmarshal(encoded, (*[]int)(nil))
+	should.Equal([]int{1, 2, 3}, *decoded.(*[]int))
+	decoded, err = gocodec.Unmarshal(encoded, (*[]int)(nil))
 	should.Equal([]int{1, 2, 3}, *decoded.(*[]int))
 }

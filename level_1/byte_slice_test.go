@@ -15,7 +15,10 @@ func Test_byte_slice(t *testing.T) {
 		5, 0, 0, 0, 0, 0, 0, 0,
 		5, 0, 0, 0, 0, 0, 0, 0,
 		'h', 'e', 'l', 'l', 'o'}, encoded[24:])
-	decoded, err := gocodec.Unmarshal(encoded, (*[]byte)(nil))
+	decoded, err := gocodec.ReadonlyConfig.Unmarshal(encoded, (*[]byte)(nil))
+	should.Nil(err)
+	should.Equal([]byte("hello"), *decoded.(*[]byte))
+	decoded, err = gocodec.Unmarshal(encoded, (*[]byte)(nil))
 	should.Nil(err)
 	should.Equal([]byte("hello"), *decoded.(*[]byte))
 	gocodec.UpdateChecksum(encoded)

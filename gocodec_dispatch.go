@@ -92,7 +92,7 @@ func createEncoderOfType(cfg *frozenConfig, valType reflect.Type) (ValEncoder, e
 			if err != nil {
 				return nil, err
 			}
-			signature = 31 * signature + encoder.Signature()
+			signature = 31*signature + encoder.Signature()
 			if !encoder.IsNoop() {
 				fields = append(fields, structFieldEncoder{
 					offset:  valType.Field(i).Offset,
@@ -111,11 +111,12 @@ func createEncoderOfType(cfg *frozenConfig, valType reflect.Type) (ValEncoder, e
 		if err != nil {
 			return nil, err
 		}
+		signature = 31*signature + elemEncoder.Signature()
 		if elemEncoder.IsNoop() {
 			elemEncoder = nil
 		}
 		encoder := &arrayEncoder{
-			BaseCodec: *newBaseCodec(valType, signature),
+			BaseCodec:   *newBaseCodec(valType, signature),
 			arrayLength: valType.Len(),
 			elementSize: valType.Elem().Size(),
 			elemEncoder: elemEncoder,
@@ -130,7 +131,7 @@ func createEncoderOfType(cfg *frozenConfig, valType reflect.Type) (ValEncoder, e
 		if err != nil {
 			return nil, err
 		}
-		signature = 31 * signature + elemEncoder.Signature()
+		signature = 31*signature + elemEncoder.Signature()
 		if elemEncoder.IsNoop() {
 			elemEncoder = nil
 		}
@@ -142,7 +143,7 @@ func createEncoderOfType(cfg *frozenConfig, valType reflect.Type) (ValEncoder, e
 		if err != nil {
 			return nil, err
 		}
-		signature = 31 * signature + elemEncoder.Signature()
+		signature = 31*signature + elemEncoder.Signature()
 		encoder := &pointerEncoder{BaseCodec: *newBaseCodec(valType, signature), elemEncoder: elemEncoder}
 		return &singlePointerFix{ValEncoder: encoder}, nil
 	}
@@ -161,12 +162,16 @@ func createDecoderOfType(cfg *frozenConfig, valType reflect.Type) (ValDecoder, e
 	case reflect.Struct:
 		fields := make([]structFieldDecoder, 0, valType.NumField())
 		signature := uint32(valKind)
+		hasPointer := false
 		for i := 0; i < valType.NumField(); i++ {
 			decoder, err := createDecoderOfType(cfg, valType.Field(i).Type)
 			if err != nil {
 				return nil, err
 			}
-			signature = 31 * signature + decoder.Signature()
+			if decoder.HasPointer() {
+				hasPointer = true
+			}
+			signature = 31*signature + decoder.Signature()
 			if !decoder.IsNoop() {
 				fields = append(fields, structFieldDecoder{
 					offset:  valType.Field(i).Offset,
@@ -174,34 +179,54 @@ func createDecoderOfType(cfg *frozenConfig, valType reflect.Type) (ValDecoder, e
 				})
 			}
 		}
-		return &structDecoder{BaseCodec: *newBaseCodec(valType, signature), fields: fields}, nil
+		if hasPointer {
+			return &structDecoderWithPointer{BaseCodec: *newBaseCodec(valType, signature), fields: fields}, nil
+		}
+		return &structDecoderWithoutPointer{BaseCodec: *newBaseCodec(valType, signature), fields: fields}, nil
 	case reflect.Array:
 		signature := uint32(valKind)
 		elemDecoder, err := createDecoderOfType(cfg, valType.Elem())
 		if err != nil {
 			return nil, err
 		}
+		signature = 31*signature + elemDecoder.Signature()
+		hasPointer := elemDecoder.HasPointer()
 		if elemDecoder.IsNoop() {
 			elemDecoder = nil
 		}
-		decoder := &arrayDecoder{
-			BaseCodec: *newBaseCodec(valType, signature),
+		if hasPointer {
+			return &arrayDecoderWithPointer{
+				BaseCodec:   *newBaseCodec(valType, signature),
+				arrayLength: valType.Len(),
+				elementSize: valType.Elem().Size(),
+				elemDecoder: elemDecoder,
+			}, nil
+		}
+		return &arrayDecoderWithoutPointer{
+			BaseCodec:   *newBaseCodec(valType, signature),
 			arrayLength: valType.Len(),
 			elementSize: valType.Elem().Size(),
 			elemDecoder: elemDecoder,
-		}
-		return decoder, nil
+		}, nil
 	case reflect.Slice:
 		signature := uint32(valKind)
 		elemDecoder, err := createDecoderOfType(cfg, valType.Elem())
 		if err != nil {
 			return nil, err
 		}
-		signature = 31 * signature + elemDecoder.Signature()
+		signature = 31*signature + elemDecoder.Signature()
+		shouldCopy := false
+		if elemDecoder.HasPointer() && cfg.readonlyDecode {
+			shouldCopy = true
+		}
 		if elemDecoder.IsNoop() {
 			elemDecoder = nil
 		}
-		return &sliceDecoder{BaseCodec: *newBaseCodec(valType, signature),
+		if shouldCopy {
+			return &sliceDecoderWithCopy{BaseCodec: *newBaseCodec(valType, signature),
+				elemSize: int(valType.Elem().Size()), elemDecoder: elemDecoder}, nil
+		}
+		return &sliceDecoderWithoutCopy{BaseCodec: *newBaseCodec(valType, signature),
 			elemSize: int(valType.Elem().Size()), elemDecoder: elemDecoder}, nil
 	case reflect.Ptr:
 		signature := uint32(valKind)
@@ -209,8 +234,11 @@ func createDecoderOfType(cfg *frozenConfig, valType reflect.Type) (ValDecoder, e
 		if err != nil {
 			return nil, err
 		}
-		signature = 31 * signature + elemDecoder.Signature()
-		return &pointerDecoder{BaseCodec: *newBaseCodec(valType, signature), elemDecoder: elemDecoder}, nil
+		signature = 31*signature + elemDecoder.Signature()
+		if elemDecoder.HasPointer() && cfg.readonlyDecode {
+			return &pointerDecoderWithCopy{BaseCodec: *newBaseCodec(valType, signature), elemDecoder: elemDecoder}, nil
+		}
+		return &pointerDecoderWithoutCopy{BaseCodec: *newBaseCodec(valType, signature), elemDecoder: elemDecoder}, nil
 	}
 	return nil, fmt.Errorf("unsupported type %s", valType.String())
 }

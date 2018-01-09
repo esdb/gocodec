@@ -20,7 +20,10 @@ func Test_nil_struct_within_struct(t *testing.T) {
 	obj := TestObject{}
 	encoded, err := gocodec.Marshal(obj)
 	should.Nil(err)
-	decoded, err := gocodec.Unmarshal(encoded, (*TestObject)(nil))
+	decoded, err := gocodec.ReadonlyConfig.Unmarshal(encoded, (*TestObject)(nil))
+	should.Nil(err)
+	should.Equal(obj, *decoded.(*TestObject))
+	decoded, err = gocodec.Unmarshal(encoded, (*TestObject)(nil))
 	should.Nil(err)
 	should.Equal(obj, *decoded.(*TestObject))
 }
@@ -49,7 +52,10 @@ func Test_struct_within_struct(t *testing.T) {
 		0x1, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0,
 		0x64, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0,
 	}, encoded[24:])
-	decoded, err := gocodec.Unmarshal(encoded, (*TestObject)(nil))
+	decoded, err := gocodec.ReadonlyConfig.Unmarshal(encoded, (*TestObject)(nil))
+	should.Nil(err)
+	should.Equal(obj, *decoded.(*TestObject))
+	decoded, err = gocodec.Unmarshal(encoded, (*TestObject)(nil))
 	should.Nil(err)
 	should.Equal(obj, *decoded.(*TestObject))
 }

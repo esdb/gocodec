@@ -23,12 +23,12 @@ func (encoder *pointerEncoder) Encode(stream *Stream) {
 	}
 }
 
-type pointerDecoder struct {
+type pointerDecoderWithoutCopy struct {
 	BaseCodec
 	elemDecoder ValDecoder
 }
 
-func (decoder *pointerDecoder) Decode(iter *Iterator) {
+func (decoder *pointerDecoderWithoutCopy) Decode(iter *Iterator) {
 	if countlog.ShouldLog(countlog.LevelDebug) {
 		defer func() {
 			recovered := recover()
@@ -47,6 +47,45 @@ func (decoder *pointerDecoder) Decode(iter *Iterator) {
 	pCursor := uintptr(pPtr)
 	offset := relOffset - (pCursor - iter.baseOffset) - iter.oldBaseOffset
 	iter.cursor = iter.cursor[offset:]
-	*(*uintptr)(pPtr) = uintptr(unsafe.Pointer(&iter.cursor[0]))
+	*(*uintptr)(unsafe.Pointer(&iter.self[0])) = uintptr(unsafe.Pointer(&iter.cursor[0]))
+	iter.self = iter.cursor
 	decoder.elemDecoder.Decode(iter)
+}
+
+func (decoder *pointerDecoderWithoutCopy) HasPointer() bool {
+	return true
+}
+
+type pointerDecoderWithCopy struct {
+	BaseCodec
+	elemDecoder ValDecoder
+}
+
+func (decoder *pointerDecoderWithCopy) Decode(iter *Iterator) {
+	if countlog.ShouldLog(countlog.LevelDebug) {
+		defer func() {
+			recovered := recover()
+			countlog.LogPanic(recovered, "valueType", decoder.valType)
+			if recovered != nil {
+				iter.ReportError("pointerDecoder", errors.New(
+					"decode failed at type: "+decoder.valType.String()))
+			}
+		}()
+	}
+	pPtr := unsafe.Pointer(&iter.cursor[0])
+	relOffset := *(*uintptr)(pPtr)
+	if relOffset == 0 {
+		return
+	}
+	pCursor := uintptr(pPtr)
+	offset := relOffset - (pCursor - iter.baseOffset) - iter.oldBaseOffset
+	iter.cursor = iter.cursor[offset:]
+	copied := append([]byte(nil), iter.cursor[:decoder.elemDecoder.Type().Size()]...)
+	*(*uintptr)(unsafe.Pointer(&iter.self[0])) = uintptr(unsafe.Pointer(&copied[0]))
+	iter.self = copied
+	decoder.elemDecoder.Decode(iter)
+}
+
+func (decoder *pointerDecoderWithCopy) HasPointer() bool {
+	return true
 }

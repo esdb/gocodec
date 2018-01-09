@@ -17,7 +17,10 @@ func Test_single_ptr_int_array(t *testing.T) {
 		0x20, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0,
 		0x1,
 	}, encoded[24:])
-	decoded, err := gocodec.Unmarshal(encoded, (*TestObject)(nil))
+	decoded, err := gocodec.ReadonlyConfig.Unmarshal(encoded, (*TestObject)(nil))
+	should.Nil(err)
+	should.Equal(obj, *decoded.(*TestObject))
+	decoded, err = gocodec.Unmarshal(encoded, (*TestObject)(nil))
 	should.Nil(err)
 	should.Equal(obj, *decoded.(*TestObject))
 	gocodec.UpdateChecksum(encoded)
@@ -39,7 +42,10 @@ func Test_two_ptrs_in_array(t *testing.T) {
 		1,
 		1,
 	}, encoded[24:])
-	decoded, err := gocodec.Unmarshal(encoded, (*TestObject)(nil))
+	decoded, err := gocodec.ReadonlyConfig.Unmarshal(encoded, (*TestObject)(nil))
+	should.Nil(err)
+	should.Equal(obj, *decoded.(*TestObject))
+	decoded, err = gocodec.Unmarshal(encoded, (*TestObject)(nil))
 	should.Nil(err)
 	should.Equal(obj, *decoded.(*TestObject))
 }

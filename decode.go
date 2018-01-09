@@ -14,6 +14,7 @@ import (
 type Iterator struct {
 	cfg           *frozenConfig
 	buf           []byte
+	self		  []byte
 	cursor        []byte
 	baseOffset    uintptr
 	oldBaseOffset uintptr
@@ -49,7 +50,7 @@ func (iter *Iterator) Skip() []byte {
 	return skipped
 }
 
-func (iter *Iterator) Copy(candidatePointers ...interface{}) interface{} {
+func (iter *Iterator) CopyThenUnmarshal(candidatePointers ...interface{}) interface{} {
 	size := iter.NextSize()
 	if size == 0 {
 		iter.Error = io.EOF
@@ -103,10 +104,10 @@ func (iter *Iterator) Unmarshal(candidatePointers ...interface{}) interface{} {
 		return nil
 	}
 	oldBaseOffset := *(*uintptr)(unsafe.Pointer(&iter.buf[16]))
-	if oldBaseOffset == iter.baseOffset {
-		(*emptyInterface)(unsafe.Pointer(&val)).word = uintptr(unsafe.Pointer(&iter.buf[24]))
-		return val
-	}
+	//if oldBaseOffset == iter.baseOffset {
+	//	(*emptyInterface)(unsafe.Pointer(&val)).word = uintptr(unsafe.Pointer(&iter.buf[24]))
+	//	return val
+	//}
 	if iter.cfg.verifyChecksum {
 		crcVal := *(*uint32)(unsafe.Pointer(&iter.buf[8]))
 		crc := crc32.NewIEEE()
@@ -116,10 +117,21 @@ func (iter *Iterator) Unmarshal(candidatePointers ...interface{}) interface{} {
 			return nil
 		}
 	}
-	*(*uintptr)(unsafe.Pointer(&iter.buf[16])) = iter.baseOffset
 	iter.oldBaseOffset = oldBaseOffset
-	(*emptyInterface)(unsafe.Pointer(&val)).word = uintptr(unsafe.Pointer(&iter.buf[24]))
-	iter.cursor = iter.buf[24:]
+	if iter.cfg.readonlyDecode {
+		if decoder.HasPointer() {
+			iter.self = append([]byte(nil), iter.buf[24:24 + decoder.Type().Size()]...)
+		} else {
+			iter.self = iter.buf[24:]
+		}
+		(*emptyInterface)(unsafe.Pointer(&val)).word = uintptr(unsafe.Pointer(&iter.self[0]))
+		iter.cursor = iter.buf[24:]
+	} else {
+		*(*uintptr)(unsafe.Pointer(&iter.buf[16])) = iter.baseOffset
+		(*emptyInterface)(unsafe.Pointer(&val)).word = uintptr(unsafe.Pointer(&iter.buf[24]))
+		iter.self = iter.buf[24:]
+		iter.cursor = iter.buf[24:]
+	}
 	decoder.Decode(iter)
 	iter.buf = nextBuf
 	return val

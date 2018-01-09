@@ -23,14 +23,14 @@ func (encoder *arrayEncoder) IsNoop() bool {
 	return encoder.elemEncoder == nil
 }
 
-type arrayDecoder struct {
+type arrayDecoderWithoutPointer struct {
 	BaseCodec
 	arrayLength int
 	elementSize uintptr
 	elemDecoder ValDecoder
 }
 
-func (decoder *arrayDecoder) Decode(iter *Iterator) {
+func (decoder *arrayDecoderWithoutPointer) Decode(iter *Iterator) {
 	if decoder.IsNoop() {
 		return
 	}
@@ -42,6 +42,36 @@ func (decoder *arrayDecoder) Decode(iter *Iterator) {
 	}
 }
 
-func (decoder *arrayDecoder) IsNoop() bool {
+func (decoder *arrayDecoderWithoutPointer) IsNoop() bool {
 	return decoder.elemDecoder == nil
+}
+
+type arrayDecoderWithPointer struct {
+	BaseCodec
+	arrayLength int
+	elementSize uintptr
+	elemDecoder ValDecoder
+}
+
+func (decoder *arrayDecoderWithPointer) Decode(iter *Iterator) {
+	if decoder.IsNoop() {
+		return
+	}
+	cursor := iter.cursor
+	self := iter.self
+	for i := 0; i < decoder.arrayLength; i++ {
+		iter.cursor = cursor // iter.cursor will change in elemDecoder
+		iter.self = self
+		decoder.elemDecoder.Decode(iter)
+		cursor = cursor[decoder.elementSize:]
+		self = self[decoder.elementSize:]
+	}
+}
+
+func (decoder *arrayDecoderWithPointer) IsNoop() bool {
+	return decoder.elemDecoder == nil
+}
+
+func (decoder *arrayDecoderWithPointer) HasPointer() bool {
+	return true
 }

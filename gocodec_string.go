@@ -23,5 +23,11 @@ func (codec *stringCodec) Decode(iter *Iterator) {
 	relOffset := header.Data
 	pCursor := uintptr(unsafe.Pointer(&iter.cursor[0]))
 	offset := relOffset - (pCursor - iter.baseOffset) - iter.oldBaseOffset
+	pStr = unsafe.Pointer(&iter.self[0])
+	header = (*stringHeader)(pStr)
 	header.Data = uintptr(unsafe.Pointer(&iter.cursor[offset]))
+}
+
+func (codec *stringCodec) HasPointer() bool {
+	return true
 }

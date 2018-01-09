@@ -18,7 +18,7 @@ func (encoder *structEncoder) Encode(stream *Stream) {
 	}
 }
 
-type structDecoder struct {
+type structDecoderWithoutPointer struct {
 	BaseCodec
 	fields []structFieldDecoder
 }
@@ -28,10 +28,29 @@ type structFieldDecoder struct {
 	decoder ValDecoder
 }
 
-func (decoder *structDecoder) Decode(iter *Iterator) {
+func (decoder *structDecoderWithoutPointer) Decode(iter *Iterator) {
 	baseCursor := iter.cursor
 	for _, field := range decoder.fields {
 		iter.cursor = baseCursor[field.offset:]
 		field.decoder.Decode(iter)
 	}
+}
+
+type structDecoderWithPointer struct {
+	BaseCodec
+	fields []structFieldDecoder
+}
+
+func (decoder *structDecoderWithPointer) Decode(iter *Iterator) {
+	baseCursor := iter.cursor
+	baseSelf := iter.self
+	for _, field := range decoder.fields {
+		iter.cursor = baseCursor[field.offset:]
+		iter.self = baseSelf[field.offset:]
+		field.decoder.Decode(iter)
+	}
+}
+
+func (decoder *structDecoderWithPointer) HasPointer() bool {
+	return true
 }
