@@ -2,6 +2,7 @@ package gocodec
 
 import (
 	"reflect"
+	"unsafe"
 )
 
 type BaseCodec struct {
@@ -16,9 +17,9 @@ func newBaseCodec(valType reflect.Type, signature uint32) *BaseCodec {
 func (codec *BaseCodec) Encode(stream *Stream) {
 }
 
-func (codec *BaseCodec) EncodeEmptyInterface(ptr uintptr, encoder ValEncoder, stream *Stream) {
+func (codec *BaseCodec) EncodeEmptyInterface(ptr unsafe.Pointer, encoder ValEncoder, stream *Stream) {
 	stream.cursor = uintptr(len(stream.buf))
-	valAsSlice := ptrAsBytes(int(codec.valType.Size()), ptr)
+	valAsSlice := ptrAsBytes(int(codec.valType.Size()), uintptr(ptr))
 	stream.buf = append(stream.buf, valAsSlice...)
 	encoder.Encode(stream)
 }
