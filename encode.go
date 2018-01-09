@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"reflect"
 	"unsafe"
-	"hash/crc32"
 )
 
 type Stream struct {
@@ -26,7 +25,7 @@ func (stream *Stream) Reset(buf []byte) {
 	stream.cursor = 0
 }
 
-func (stream *Stream) Marshal(val interface{}) uint64 {
+func (stream *Stream) Marshal(val interface{}) uint32 {
 	valType := reflect.TypeOf(val)
 	encoder, err := encoderOfType(stream.cfg, valType)
 	if err != nil {
@@ -35,24 +34,18 @@ func (stream *Stream) Marshal(val interface{}) uint64 {
 	}
 	baseCursor := len(stream.buf)
 	stream.buf = append(stream.buf, []byte{
-		0, 0, 0, 0, 0, 0, 0, 0, // size
-		0, 0, 0, 0,             // crc32
-		0, 0, 0, 0,             // signature
+		0, 0, 0, 0, // size
+		0, 0, 0, 0, // signature
 	}...)
 	encoder.EncodeEmptyInterface(ptrOfEmptyInterface(val), stream)
 	if stream.Error != nil {
 		return 0
 	}
-	encoded := stream.buf[baseCursor+12:]
 	pSize := unsafe.Pointer(&stream.buf[baseCursor])
-	size := uint64(len(stream.buf) - baseCursor)
-	*(*uint64)(pSize) = size
-	pSig := unsafe.Pointer(&stream.buf[baseCursor+12])
+	size := uint32(len(stream.buf) - baseCursor)
+	*(*uint32)(pSize) = size
+	pSig := unsafe.Pointer(&stream.buf[baseCursor+4])
 	*(*uint32)(pSig) = encoder.Signature()
-	pCrc := unsafe.Pointer(&stream.buf[baseCursor+8])
-	crc := crc32.NewIEEE()
-	crc.Write(encoded)
-	*(*uint32)(pCrc) = crc.Sum32()
 	return size
 }
 

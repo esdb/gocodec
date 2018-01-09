@@ -16,7 +16,7 @@ func Test_string_slice(t *testing.T) {
 		0x18, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, // sliceHeader
 		0x20, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0,                         // string header
 		0x11, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0,                         // string header
-		'h', 'i'}, encoded[16:])
+		'h', 'i'}, encoded[8:])
 	decoded, err := gocodec.ReadonlyConfig.Unmarshal(encoded, (*[]string)(nil))
 	should.Nil(err)
 	should.Equal([]string{"h", "i"}, *decoded.(*[]string))
@@ -38,7 +38,7 @@ func Test_ptr_slice(t *testing.T) {
 		16, 0, 0, 0, 0, 0, 0, 0, 24, 0, 0, 0, 0, 0, 0, 0,
 		1, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, // [0]
 		3, 0, 0, 0, 0, 0, 0, 0, 4, 0, 0, 0, 0, 0, 0, 0, // [1]
-	}, encoded[16:])
+	}, encoded[8:])
 	decoded, err := gocodec.ReadonlyConfig.Unmarshal(encoded, (*[]*TestObject)(nil))
 	should.Nil(err)
 	should.Equal([]*TestObject{{1, 2}, {3, 4}}, *decoded.(*[]*TestObject))

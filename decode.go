@@ -4,7 +4,6 @@ import (
 	"reflect"
 	"fmt"
 	"unsafe"
-	"hash/crc32"
 	"errors"
 	"io"
 	"github.com/v2pro/plz/countlog"
@@ -29,11 +28,11 @@ func (iter *Iterator) Reset(buf []byte) {
 	iter.Error = nil
 }
 
-func (iter *Iterator) NextSize() uint64 {
-	if len(iter.buf) < 16 {
+func (iter *Iterator) NextSize() uint32 {
+	if len(iter.buf) < 8 {
 		return 0
 	}
-	return *(*uint64)(unsafe.Pointer(&iter.buf[0]))
+	return *(*uint32)(unsafe.Pointer(&iter.buf[0]))
 }
 
 func (iter *Iterator) Skip() []byte {
@@ -63,7 +62,6 @@ func (iter *Iterator) Unmarshal(candidatePointers ...interface{}) interface{} {
 		iter.Error = io.EOF
 		return nil
 	}
-	encoded := iter.buf[12:size]
 	thisBuf := iter.buf[:size]
 	defer func() {
 		recovered := recover()
@@ -76,7 +74,7 @@ func (iter *Iterator) Unmarshal(candidatePointers ...interface{}) interface{} {
 		}
 	}()
 	nextBuf := iter.buf[size:]
-	sig := *(*uint32)(unsafe.Pointer(&iter.buf[12]))
+	sig := *(*uint32)(unsafe.Pointer(&iter.buf[4]))
 	var decoder RootDecoder
 	var val interface{}
 	if len(candidatePointers) == 1 {
@@ -112,15 +110,6 @@ func (iter *Iterator) Unmarshal(candidatePointers ...interface{}) interface{} {
 			return nil
 		}
 	}
-	if iter.cfg.verifyChecksum {
-		crcVal := *(*uint32)(unsafe.Pointer(&iter.buf[8]))
-		crc := crc32.NewIEEE()
-		crc.Write(encoded)
-		if crc.Sum32() != crcVal {
-			iter.ReportError("DecodeVal", errors.New("crc32 verification failed"))
-			return nil
-		}
-	}
 	decoder.DecodeEmptyInterface((*emptyInterface)(unsafe.Pointer(&val)), iter)
 	iter.buf = nextBuf
 	return val
@@ -135,13 +124,4 @@ func (iter *Iterator) ReportError(operation string, err error) {
 
 func (iter *Iterator) Buffer() []byte {
 	return iter.buf
-}
-
-func UpdateChecksum(buf []byte) {
-	size := *(*uint64)(unsafe.Pointer(&buf[0]))
-	encoded := buf[12:size]
-	crc := crc32.NewIEEE()
-	crc.Write(encoded)
-	pCrc := unsafe.Pointer(&buf[8])
-	*(*uint32)(pCrc) = crc.Sum32()
 }

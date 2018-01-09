@@ -56,7 +56,7 @@ func Test_json(t *testing.T) {
 }
 
 func Benchmark(b *testing.B) {
-	api := gocodec.Config{VerifyChecksum: false}.Froze()
+	api := gocodec.Config{}.Froze()
 	b.Run("gocodec", func(b *testing.B) {
 		f, _ := os.OpenFile("/tmp/bloomfilter.bin", os.O_RDONLY, 0)
 		b.ReportAllocs()

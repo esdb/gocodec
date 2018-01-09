@@ -7,7 +7,6 @@ import (
 )
 
 type Config struct {
-	VerifyChecksum bool
 	ReadonlyDecode bool
 }
 
@@ -46,21 +45,20 @@ type RootDecoder interface {
 }
 
 type frozenConfig struct {
-	verifyChecksum bool
 	readonlyDecode bool
 	decoderCache   unsafe.Pointer
 	encoderCache   unsafe.Pointer
 }
 
 func (cfg Config) Froze() API {
-	api := &frozenConfig{verifyChecksum: cfg.VerifyChecksum, readonlyDecode: cfg.ReadonlyDecode}
+	api := &frozenConfig{readonlyDecode: cfg.ReadonlyDecode}
 	atomic.StorePointer(&api.decoderCache, unsafe.Pointer(&map[string]RootDecoder{}))
 	atomic.StorePointer(&api.encoderCache, unsafe.Pointer(&map[string]RootEncoder{}))
 	return api
 }
 
-var DefaultConfig = Config{VerifyChecksum: true}.Froze()
-var ReadonlyConfig = Config{VerifyChecksum: true, ReadonlyDecode: true}.Froze()
+var DefaultConfig = Config{}.Froze()
+var ReadonlyConfig = Config{ReadonlyDecode: true}.Froze()
 
 func Marshal(obj interface{}) ([]byte, error) {
 	return DefaultConfig.Marshal(obj)

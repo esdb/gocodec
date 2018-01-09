@@ -41,9 +41,9 @@ func (decoder *rootDecoderWithCopy) Type() reflect.Type {
 }
 
 func (decoder *rootDecoderWithCopy) DecodeEmptyInterface(ptr *emptyInterface, iter *Iterator) {
-	iter.self = append([]byte(nil), iter.buf[16:16+decoder.Type().Size()]...)
+	iter.self = append([]byte(nil), iter.buf[8:8+decoder.Type().Size()]...)
 	ptr.word = uintptr(unsafe.Pointer(&iter.self[0]))
-	iter.cursor = iter.buf[16:]
+	iter.cursor = iter.buf[8:]
 	decoder.decoder.Decode(iter)
 }
 
@@ -62,8 +62,8 @@ func (decoder *rootDecoderWithoutCopy) Type() reflect.Type {
 }
 
 func (decoder *rootDecoderWithoutCopy) DecodeEmptyInterface(ptr *emptyInterface, iter *Iterator) {
-	ptr.word = uintptr(unsafe.Pointer(&iter.buf[16]))
-	iter.self = iter.buf[16:]
-	iter.cursor = iter.buf[16:]
+	ptr.word = uintptr(unsafe.Pointer(&iter.buf[8]))
+	iter.self = iter.buf[8:]
+	iter.cursor = iter.buf[8:]
 	decoder.decoder.Decode(iter)
 }
