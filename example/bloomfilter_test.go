@@ -22,7 +22,7 @@ func Test_bloomfilter(t *testing.T) {
 	should.Nil(err)
 	should.NotNil(encoded)
 	ioutil.WriteFile("/tmp/bloomfilter.bin", encoded, 0666)
-	decoded, err := gocodec.Unmarshal(encoded, (*bloom.BloomFilter)(nil))
+	decoded, err := gocodec.ReadonlyConfig.Unmarshal(encoded, (*bloom.BloomFilter)(nil))
 	should.Nil(err)
 	f2 := decoded.(*bloom.BloomFilter)
 	should.True(f2.Test([]byte("hello")))

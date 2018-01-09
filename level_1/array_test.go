@@ -14,16 +14,12 @@ func Test_single_ptr_int_array(t *testing.T) {
 	encoded, err := gocodec.Marshal(obj)
 	should.Nil(err)
 	should.Equal([]byte{
-		0x20, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0,
+		0x8, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0,
 		0x1,
-	}, encoded[24:])
+	}, encoded[16:])
 	decoded, err := gocodec.ReadonlyConfig.Unmarshal(encoded, (*TestObject)(nil))
 	should.Nil(err)
 	should.Equal(obj, *decoded.(*TestObject))
-	decoded, err = gocodec.Unmarshal(encoded, (*TestObject)(nil))
-	should.Nil(err)
-	should.Equal(obj, *decoded.(*TestObject))
-	gocodec.UpdateChecksum(encoded)
 	decoded, err = gocodec.Unmarshal(encoded, (*TestObject)(nil))
 	should.Nil(err)
 	should.Equal(obj, *decoded.(*TestObject))
@@ -37,11 +33,11 @@ func Test_two_ptrs_in_array(t *testing.T) {
 	encoded, err := gocodec.Marshal(obj)
 	should.Nil(err)
 	should.Equal([]byte{
-		0x28, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0,
-		0x29, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0,
+		0x10, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0,
+		0x9, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0,
 		1,
 		1,
-	}, encoded[24:])
+	}, encoded[16:])
 	decoded, err := gocodec.ReadonlyConfig.Unmarshal(encoded, (*TestObject)(nil))
 	should.Nil(err)
 	should.Equal(obj, *decoded.(*TestObject))

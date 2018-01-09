@@ -16,28 +16,21 @@ type Iterator struct {
 	buf           []byte
 	self		  []byte
 	cursor        []byte
-	baseOffset    uintptr
-	oldBaseOffset uintptr
 	Error         error
 }
 
 func (cfg *frozenConfig) NewIterator(buf []byte) *Iterator {
-	baseOffset := uintptr(0)
-	if buf != nil {
-		baseOffset = uintptr(unsafe.Pointer(&buf[0]))
-	}
-	return &Iterator{cfg: cfg, buf: buf, baseOffset: baseOffset}
+	return &Iterator{cfg: cfg, buf: buf}
 }
 
 func (iter *Iterator) Reset(buf []byte) {
 	iter.buf = buf
 	iter.cursor = nil
-	iter.baseOffset = uintptr(unsafe.Pointer(&buf[0]))
 	iter.Error = nil
 }
 
 func (iter *Iterator) NextSize() uint64 {
-	if len(iter.buf) < 24 {
+	if len(iter.buf) < 16 {
 		return 0
 	}
 	return *(*uint64)(unsafe.Pointer(&iter.buf[0]))
@@ -86,28 +79,39 @@ func (iter *Iterator) Unmarshal(candidatePointers ...interface{}) interface{} {
 	sig := *(*uint32)(unsafe.Pointer(&iter.buf[12]))
 	var decoder ValDecoder
 	var val interface{}
-	for _, candidatePointer := range candidatePointers {
+	if len(candidatePointers) == 1 {
+		candidatePointer := candidatePointers[0]
 		valType := reflect.TypeOf(candidatePointer).Elem()
 		tryDecoder, err := decoderOfType(iter.cfg, valType)
 		if err != nil {
 			iter.ReportError("DecodeVal", err)
 			return nil
 		}
-		if tryDecoder.Signature() == sig {
-			decoder = tryDecoder
-			val = candidatePointer
-			break
+		if tryDecoder.Signature() != sig {
+			iter.ReportError("DecodeVal", errors.New("no decoder matches the signature"))
+			return nil
+		}
+		decoder = tryDecoder
+		val = candidatePointer
+	} else {
+		for _, candidatePointer := range candidatePointers {
+			valType := reflect.TypeOf(candidatePointer).Elem()
+			tryDecoder, err := decoderOfType(iter.cfg, valType)
+			if err != nil {
+				iter.ReportError("DecodeVal", err)
+				return nil
+			}
+			if tryDecoder.Signature() == sig {
+				decoder = tryDecoder
+				val = candidatePointer
+				break
+			}
+		}
+		if decoder == nil {
+			iter.ReportError("DecodeVal", errors.New("no decoder matches the signature"))
+			return nil
 		}
 	}
-	if decoder == nil {
-		iter.ReportError("DecodeVal", errors.New("no decoder matches the signature"))
-		return nil
-	}
-	oldBaseOffset := *(*uintptr)(unsafe.Pointer(&iter.buf[16]))
-	//if oldBaseOffset == iter.baseOffset {
-	//	(*emptyInterface)(unsafe.Pointer(&val)).word = uintptr(unsafe.Pointer(&iter.buf[24]))
-	//	return val
-	//}
 	if iter.cfg.verifyChecksum {
 		crcVal := *(*uint32)(unsafe.Pointer(&iter.buf[8]))
 		crc := crc32.NewIEEE()
@@ -117,20 +121,18 @@ func (iter *Iterator) Unmarshal(candidatePointers ...interface{}) interface{} {
 			return nil
 		}
 	}
-	iter.oldBaseOffset = oldBaseOffset
 	if iter.cfg.readonlyDecode {
 		if decoder.HasPointer() {
-			iter.self = append([]byte(nil), iter.buf[24:24 + decoder.Type().Size()]...)
+			iter.self = append([]byte(nil), iter.buf[16:16 + decoder.Type().Size()]...)
 		} else {
-			iter.self = iter.buf[24:]
+			iter.self = iter.buf[16:]
 		}
 		(*emptyInterface)(unsafe.Pointer(&val)).word = uintptr(unsafe.Pointer(&iter.self[0]))
-		iter.cursor = iter.buf[24:]
+		iter.cursor = iter.buf[16:]
 	} else {
-		*(*uintptr)(unsafe.Pointer(&iter.buf[16])) = iter.baseOffset
-		(*emptyInterface)(unsafe.Pointer(&val)).word = uintptr(unsafe.Pointer(&iter.buf[24]))
-		iter.self = iter.buf[24:]
-		iter.cursor = iter.buf[24:]
+		(*emptyInterface)(unsafe.Pointer(&val)).word = uintptr(unsafe.Pointer(&iter.buf[16]))
+		iter.self = iter.buf[16:]
+		iter.cursor = iter.buf[16:]
 	}
 	decoder.Decode(iter)
 	iter.buf = nextBuf

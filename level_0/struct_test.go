@@ -18,7 +18,7 @@ func Test_simple_struct(t *testing.T) {
 	should.Equal([]byte{
 		0x1, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0,
 		0x2, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0,
-	}, encoded[24:])
+	}, encoded[16:])
 	decoded, err := gocodec.Unmarshal(encoded, (*TestObject)(nil))
 	should.Nil(err)
 	should.Equal(obj, *decoded.(*TestObject))
@@ -38,7 +38,7 @@ func Test_struct_signature(t *testing.T) {
 	should.Nil(err)
 	should.Equal([]byte{
 		0x1, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0,
-	}, encoded[24:])
+	}, encoded[16:])
 	decoded, err := gocodec.Unmarshal(encoded, (*TestVersion2)(nil), (*TestVersion1)(nil))
 	should.Nil(err)
 	should.Equal(obj, *decoded.(*TestVersion1))

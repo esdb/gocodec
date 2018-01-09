@@ -16,7 +16,7 @@ func (encoder *pointerEncoder) Encode(stream *Stream) {
 	ptr := *(*uintptr)(pPtr)
 	if ptr != 0 {
 		valAsBytes := ptrAsBytes(int(encoder.elemEncoder.Type().Size()), ptr)
-		*(*uintptr)(pPtr) = uintptr(len(stream.buf))
+		*(*uintptr)(pPtr) = uintptr(len(stream.buf)) - stream.cursor
 		stream.cursor = uintptr(len(stream.buf))
 		stream.buf = append(stream.buf, valAsBytes...)
 		encoder.elemEncoder.Encode(stream)
@@ -44,9 +44,7 @@ func (decoder *pointerDecoderWithoutCopy) Decode(iter *Iterator) {
 	if relOffset == 0 {
 		return
 	}
-	pCursor := uintptr(pPtr)
-	offset := relOffset - (pCursor - iter.baseOffset) - iter.oldBaseOffset
-	iter.cursor = iter.cursor[offset:]
+	iter.cursor = iter.cursor[relOffset:]
 	*(*uintptr)(unsafe.Pointer(&iter.self[0])) = uintptr(unsafe.Pointer(&iter.cursor[0]))
 	iter.self = iter.cursor
 	decoder.elemDecoder.Decode(iter)
@@ -77,9 +75,7 @@ func (decoder *pointerDecoderWithCopy) Decode(iter *Iterator) {
 	if relOffset == 0 {
 		return
 	}
-	pCursor := uintptr(pPtr)
-	offset := relOffset - (pCursor - iter.baseOffset) - iter.oldBaseOffset
-	iter.cursor = iter.cursor[offset:]
+	iter.cursor = iter.cursor[relOffset:]
 	copied := append([]byte(nil), iter.cursor[:decoder.elemDecoder.Type().Size()]...)
 	*(*uintptr)(unsafe.Pointer(&iter.self[0])) = uintptr(unsafe.Pointer(&copied[0]))
 	iter.self = copied

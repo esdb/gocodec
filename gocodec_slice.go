@@ -19,7 +19,7 @@ func (encoder *sliceEncoder) Encode(stream *Stream) {
 	header.Cap = header.Len
 	byteSlice := ptrAsBytes(encoder.elemSize*header.Len, header.Data)
 	// replace actual pointer with relative offset
-	header.Data = uintptr(len(stream.buf))
+	header.Data = uintptr(len(stream.buf)) - stream.cursor
 	stream.cursor = uintptr(len(stream.buf)) // start of the bytes
 	stream.buf = append(stream.buf, byteSlice...)
 	if encoder.elemEncoder != nil {
@@ -45,11 +45,9 @@ func (decoder *sliceDecoderWithoutCopy) Decode(iter *Iterator) {
 		return
 	}
 	relOffset := header.Data
-	pCursor := uintptr(unsafe.Pointer(&iter.cursor[0]))
-	offset := relOffset - (pCursor - iter.baseOffset) - iter.oldBaseOffset
-	header.Data = uintptr(unsafe.Pointer(&iter.cursor[offset]))
+	header.Data = uintptr(unsafe.Pointer(&iter.cursor[relOffset]))
 	if decoder.elemDecoder != nil {
-		cursor := iter.cursor[offset:]
+		cursor := iter.cursor[relOffset:]
 		for i := 0; i < header.Len; i++ {
 			if i > 0 {
 				cursor = cursor[decoder.elemSize:]
@@ -78,9 +76,7 @@ func (decoder *sliceDecoderWithCopy) Decode(iter *Iterator) {
 		return
 	}
 	relOffset := header.Data
-	pCursor := uintptr(unsafe.Pointer(&iter.cursor[0]))
-	offset := relOffset - (pCursor - iter.baseOffset) - iter.oldBaseOffset
-	cursor := iter.cursor[offset:]
+	cursor := iter.cursor[relOffset:]
 	copied := append([]byte(nil), cursor[:decoder.elemSize*header.Len]...)
 	header.Data = uintptr(unsafe.Pointer(&copied[0]))
 	for i := 0; i < header.Len; i++ {
