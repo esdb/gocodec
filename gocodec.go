@@ -6,13 +6,29 @@ import (
 	"reflect"
 )
 
+type ObjectSeq uint64
+
+type Allocator interface {
+	Copy(ObjectSeq, []byte) []byte
+}
+
+type DefaultAllocator struct {
+}
+
+func (allocator *DefaultAllocator) Copy(objectSeq ObjectSeq, original []byte) []byte {
+	return append([]byte(nil), original...)
+}
+
+var defaultAllocator = &DefaultAllocator{}
+
 type Config struct {
 	ReadonlyDecode bool
 }
 
 type API interface {
 	Marshal(val interface{}) ([]byte, error)
-	Unmarshal(buf []byte, candidatePointers ...interface{}) (interface{}, error)
+	Unmarshal(buf []byte, candidatePointer interface{}) (interface{}, error)
+	UnmarshalCandidates(buf []byte, candidatePointers ...interface{}) (interface{}, error)
 	NewIterator(buf []byte) *Iterator
 	NewStream(buf []byte) *Stream
 }
@@ -46,6 +62,7 @@ type RootDecoder interface {
 
 type frozenConfig struct {
 	readonlyDecode bool
+	allocator      Allocator
 	decoderCache   unsafe.Pointer
 	encoderCache   unsafe.Pointer
 }
@@ -64,8 +81,12 @@ func Marshal(obj interface{}) ([]byte, error) {
 	return DefaultConfig.Marshal(obj)
 }
 
-func Unmarshal(buf []byte, candidatePointers ...interface{}) (interface{}, error) {
-	return DefaultConfig.Unmarshal(buf, candidatePointers...)
+func Unmarshal(buf []byte, candidatePointer interface{}) (interface{}, error) {
+	return DefaultConfig.Unmarshal(buf, candidatePointer)
+}
+
+func UnmarshalCandidates(buf []byte, candidatePointers ...interface{}) (interface{}, error) {
+	return DefaultConfig.UnmarshalCandidates(buf, candidatePointers...)
 }
 
 func NewIterator(buf []byte) *Iterator {
@@ -82,8 +103,14 @@ func (cfg *frozenConfig) Marshal(val interface{}) ([]byte, error) {
 	return stream.Buffer(), stream.Error
 }
 
-func (cfg *frozenConfig) Unmarshal(buf []byte, candidatePointers ...interface{}) (interface{}, error) {
+func (cfg *frozenConfig) Unmarshal(buf []byte, candidatePointer interface{}) (interface{}, error) {
 	iter := cfg.NewIterator(buf)
-	val := iter.Unmarshal(candidatePointers...)
+	val := iter.Unmarshal(candidatePointer)
+	return val, iter.Error
+}
+
+func (cfg *frozenConfig) UnmarshalCandidates(buf []byte, candidatePointers ...interface{}) (interface{}, error) {
+	iter := cfg.NewIterator(buf)
+	val := iter.UnmarshalCandidates(candidatePointers...)
 	return val, iter.Error
 }

@@ -77,7 +77,7 @@ func (decoder *sliceDecoderWithCopy) Decode(iter *Iterator) {
 	}
 	relOffset := header.Data
 	cursor := iter.cursor[relOffset:]
-	copied := append([]byte(nil), cursor[:decoder.elemSize*header.Len]...)
+	copied := iter.allocator.Copy(iter.objectSeq, cursor[:decoder.elemSize*header.Len])
 	header.Data = uintptr(unsafe.Pointer(&copied[0]))
 	for i := 0; i < header.Len; i++ {
 		if i > 0 {

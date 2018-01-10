@@ -41,7 +41,7 @@ func (decoder *rootDecoderWithCopy) Type() reflect.Type {
 }
 
 func (decoder *rootDecoderWithCopy) DecodeEmptyInterface(ptr *emptyInterface, iter *Iterator) {
-	iter.self = append([]byte(nil), iter.buf[8:8+decoder.Type().Size()]...)
+	iter.self = iter.allocator.Copy(iter.objectSeq, iter.buf[8:8+decoder.Type().Size()])
 	ptr.word = uintptr(unsafe.Pointer(&iter.self[0]))
 	iter.cursor = iter.buf[8:]
 	decoder.decoder.Decode(iter)
