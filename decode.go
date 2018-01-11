@@ -50,7 +50,7 @@ func (iter *Iterator) CopyThenUnmarshal(candidatePointer interface{}) interface{
 		iter.Error = io.EOF
 		return nil
 	}
-	copied := iter.allocator.Copy(iter.objectSeq, iter.buf[:size])
+	copied := iter.allocator.Allocate(iter.objectSeq, iter.buf[:size])
 	nextBuf := iter.buf[size:]
 	iter.Reset(copied)
 	result := iter.Unmarshal(candidatePointer)
@@ -64,7 +64,7 @@ func (iter *Iterator) CopyThenUnmarshalCandidates(candidatePointers ...interface
 		iter.Error = io.EOF
 		return nil
 	}
-	copied := iter.allocator.Copy(iter.objectSeq, iter.buf[:size])
+	copied := iter.allocator.Allocate(iter.objectSeq, iter.buf[:size])
 	nextBuf := iter.buf[size:]
 	iter.Reset(copied)
 	result := iter.UnmarshalCandidates(candidatePointers...)

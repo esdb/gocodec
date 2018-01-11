@@ -76,7 +76,7 @@ func (decoder *pointerDecoderWithCopy) Decode(iter *Iterator) {
 		return
 	}
 	iter.cursor = iter.cursor[relOffset:]
-	copied := iter.allocator.Copy(iter.objectSeq, iter.cursor[:decoder.elemDecoder.Type().Size()])
+	copied := iter.allocator.Allocate(iter.objectSeq, iter.cursor[:decoder.elemDecoder.Type().Size()])
 	*(*uintptr)(unsafe.Pointer(&iter.self[0])) = uintptr(unsafe.Pointer(&copied[0]))
 	iter.self = copied
 	decoder.elemDecoder.Decode(iter)

@@ -9,13 +9,13 @@ import (
 type ObjectSeq uint64
 
 type Allocator interface {
-	Copy(ObjectSeq, []byte) []byte
+	Allocate(ObjectSeq, []byte) []byte
 }
 
 type DefaultAllocator struct {
 }
 
-func (allocator *DefaultAllocator) Copy(objectSeq ObjectSeq, original []byte) []byte {
+func (allocator *DefaultAllocator) Allocate(objectSeq ObjectSeq, original []byte) []byte {
 	return append([]byte(nil), original...)
 }
 
