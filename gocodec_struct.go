@@ -13,11 +13,12 @@ type structFieldEncoder struct {
 }
 
 func (encoder *structEncoder) Encode(prStruct unsafe.Pointer, stream *Stream) {
-	//baseCursor := stream.cursor
-	//for _, field := range encoder.fields {
-	//	stream.cursor = baseCursor + field.offset
-	//	field.encoder.Encode(stream)
-	//}
+	baseCursor := stream.cursor
+	prBase := uintptr(prStruct)
+	for _, field := range encoder.fields {
+		stream.cursor = baseCursor + field.offset
+		field.encoder.Encode(unsafe.Pointer(prBase + field.offset), stream)
+	}
 }
 
 type structDecoderWithoutPointer struct {

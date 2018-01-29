@@ -10,15 +10,17 @@ type arrayEncoder struct {
 }
 
 func (encoder *arrayEncoder) Encode(prArray unsafe.Pointer, stream *Stream) {
-	//if encoder.IsNoop() {
-	//	return
-	//}
-	//cursor := stream.cursor
-	//for i := 0; i < encoder.arrayLength; i++ {
-	//	stream.cursor = cursor // stream.cursor will change in the elemEncoder
-	//	encoder.elemEncoder.Encode(stream)
-	//	cursor = cursor + encoder.elementSize
-	//}
+	if encoder.IsNoop() {
+		return
+	}
+	cursor := stream.cursor
+	prElem := uintptr(prArray)
+	for i := 0; i < encoder.arrayLength; i++ {
+		stream.cursor = cursor // stream.cursor will change in the elemEncoder
+		encoder.elemEncoder.Encode(unsafe.Pointer(prElem), stream)
+		cursor = cursor + encoder.elementSize
+		prElem = prElem + encoder.elementSize
+	}
 }
 
 func (encoder *arrayEncoder) IsNoop() bool {
