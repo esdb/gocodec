@@ -15,8 +15,14 @@ type stringWritableHeader struct {
 	Len  int
 }
 
-type sliceHeader struct {
+type sliceReadonlyHeader struct {
 	Data unsafe.Pointer
+	Len  int
+	Cap  int
+}
+
+type sliceWritableHeader struct {
+	Data uintptr
 	Len  int
 	Cap  int
 }
@@ -26,7 +32,7 @@ func ptrOfEmptyInterface(obj interface{}) unsafe.Pointer {
 }
 
 func ptrAsBytes(size int, ptr unsafe.Pointer) []byte {
-	valAsSlice := *(*[]byte)((unsafe.Pointer)(&sliceHeader{
+	valAsSlice := *(*[]byte)((unsafe.Pointer)(&sliceReadonlyHeader{
 		Data: ptr, Len: size, Cap: size}))
 	return valAsSlice
 }
