@@ -13,9 +13,9 @@ type rootEncoder struct {
 
 func (encoder *rootEncoder) EncodeEmptyInterface(ptr unsafe.Pointer, stream *Stream) {
 	stream.cursor = uintptr(len(stream.buf))
-	valAsSlice := ptrAsBytes(int(encoder.valType.Size()), uintptr(ptr))
+	valAsSlice := ptrAsBytes(int(encoder.valType.Size()), ptr)
 	stream.buf = append(stream.buf, valAsSlice...)
-	encoder.encoder.Encode(stream)
+	encoder.encoder.Encode(ptr, stream)
 }
 
 func (encoder *rootEncoder) Signature() uint32 {
@@ -42,7 +42,7 @@ func (decoder *rootDecoderWithCopy) Type() reflect.Type {
 
 func (decoder *rootDecoderWithCopy) DecodeEmptyInterface(ptr *emptyInterface, iter *Iterator) {
 	iter.self = iter.allocator.Allocate(iter.objectSeq, iter.buf[8:8+decoder.Type().Size()])
-	ptr.word = uintptr(unsafe.Pointer(&iter.self[0]))
+	ptr.word = unsafe.Pointer(&iter.self[0])
 	iter.cursor = iter.buf[8:]
 	decoder.decoder.Decode(iter)
 }
@@ -62,7 +62,7 @@ func (decoder *rootDecoderWithoutCopy) Type() reflect.Type {
 }
 
 func (decoder *rootDecoderWithoutCopy) DecodeEmptyInterface(ptr *emptyInterface, iter *Iterator) {
-	ptr.word = uintptr(unsafe.Pointer(&iter.buf[8]))
+	ptr.word = unsafe.Pointer(&iter.buf[8])
 	iter.self = iter.buf[8:]
 	iter.cursor = iter.buf[8:]
 	decoder.decoder.Decode(iter)

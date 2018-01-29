@@ -11,16 +11,16 @@ type pointerEncoder struct {
 	elemEncoder ValEncoder
 }
 
-func (encoder *pointerEncoder) Encode(stream *Stream) {
-	pPtr := unsafe.Pointer(&stream.buf[stream.cursor])
-	ptr := *(*uintptr)(pPtr)
-	if ptr != 0 {
-		valAsBytes := ptrAsBytes(int(encoder.elemEncoder.Type().Size()), ptr)
-		*(*uintptr)(pPtr) = uintptr(len(stream.buf)) - stream.cursor
-		stream.cursor = uintptr(len(stream.buf))
-		stream.buf = append(stream.buf, valAsBytes...)
-		encoder.elemEncoder.Encode(stream)
-	}
+func (encoder *pointerEncoder) Encode(prPointer unsafe.Pointer, stream *Stream) {
+	//pPtr := unsafe.Pointer(&stream.buf[stream.cursor])
+	//ptr := *(*uintptr)(pPtr)
+	//if ptr != 0 {
+	//	valAsBytes := ptrAsBytes(int(encoder.elemEncoder.Type().Size()), unsafe.Pointer(ptr))
+	//	*(*uintptr)(pPtr) = uintptr(len(stream.buf)) - stream.cursor
+	//	stream.cursor = uintptr(len(stream.buf))
+	//	stream.buf = append(stream.buf, valAsBytes...)
+	//	encoder.elemEncoder.Encode(stream)
+	//}
 }
 
 type pointerDecoderWithoutCopy struct {

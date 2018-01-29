@@ -39,7 +39,7 @@ func Test_struct_signature(t *testing.T) {
 	should.Equal([]byte{
 		0x1, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0,
 	}, encoded[8:])
-	decoded, err := gocodec.Unmarshal(encoded, (*TestVersion2)(nil), (*TestVersion1)(nil))
+	decoded, err := gocodec.UnmarshalCandidates(encoded, (*TestVersion2)(nil), (*TestVersion1)(nil))
 	should.Nil(err)
 	should.Equal(obj, *decoded.(*TestVersion1))
 }

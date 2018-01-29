@@ -2,49 +2,31 @@ package gocodec
 
 import (
 	"reflect"
-	"sync/atomic"
-	"unsafe"
 	"fmt"
 )
 
 func (cfg *frozenConfig) addDecoderToCache(cacheKey reflect.Type, decoder RootDecoder) {
-	done := false
-	for !done {
-		ptr := atomic.LoadPointer(&cfg.decoderCache)
-		cache := *(*map[reflect.Type]RootDecoder)(ptr)
-		copied := map[reflect.Type]RootDecoder{}
-		for k, v := range cache {
-			copied[k] = v
-		}
-		copied[cacheKey] = decoder
-		done = atomic.CompareAndSwapPointer(&cfg.decoderCache, ptr, unsafe.Pointer(&copied))
-	}
+	cfg.decoderCache.Store(cacheKey, decoder)
 }
 
 func (cfg *frozenConfig) addEncoderToCache(cacheKey reflect.Type, encoder RootEncoder) {
-	done := false
-	for !done {
-		ptr := atomic.LoadPointer(&cfg.encoderCache)
-		cache := *(*map[reflect.Type]RootEncoder)(ptr)
-		copied := map[reflect.Type]RootEncoder{}
-		for k, v := range cache {
-			copied[k] = v
-		}
-		copied[cacheKey] = encoder
-		done = atomic.CompareAndSwapPointer(&cfg.encoderCache, ptr, unsafe.Pointer(&copied))
-	}
+	cfg.encoderCache.Store(cacheKey, encoder)
 }
 
 func (cfg *frozenConfig) getDecoderFromCache(cacheKey reflect.Type) RootDecoder {
-	ptr := atomic.LoadPointer(&cfg.decoderCache)
-	cache := *(*map[reflect.Type]RootDecoder)(ptr)
-	return cache[cacheKey]
+	decoder, found := cfg.decoderCache.Load(cacheKey)
+	if found {
+		return decoder.(RootDecoder)
+	}
+	return nil
 }
 
 func (cfg *frozenConfig) getEncoderFromCache(cacheKey reflect.Type) RootEncoder {
-	ptr := atomic.LoadPointer(&cfg.encoderCache)
-	cache := *(*map[reflect.Type]RootEncoder)(ptr)
-	return cache[cacheKey]
+	encoder, found := cfg.encoderCache.Load(cacheKey)
+	if found {
+		return encoder.(RootEncoder)
+	}
+	return nil
 }
 
 func encoderOfType(cfg *frozenConfig, valType reflect.Type) (RootEncoder, error) {

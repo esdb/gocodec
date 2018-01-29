@@ -2,8 +2,8 @@ package gocodec
 
 import (
 	"unsafe"
-	"sync/atomic"
 	"reflect"
+	"sync"
 )
 
 type ObjectSeq uint64
@@ -34,7 +34,7 @@ type API interface {
 }
 
 type ValEncoder interface {
-	Encode(stream *Stream)
+	Encode(ptr unsafe.Pointer, stream *Stream)
 	Type() reflect.Type
 	IsNoop() bool
 	Signature() uint32
@@ -63,14 +63,16 @@ type RootDecoder interface {
 type frozenConfig struct {
 	readonlyDecode bool
 	allocator      Allocator
-	decoderCache   unsafe.Pointer
-	encoderCache   unsafe.Pointer
+	decoderCache   *sync.Map
+	encoderCache   *sync.Map
 }
 
 func (cfg Config) Froze() API {
-	api := &frozenConfig{readonlyDecode: cfg.ReadonlyDecode}
-	atomic.StorePointer(&api.decoderCache, unsafe.Pointer(&map[string]RootDecoder{}))
-	atomic.StorePointer(&api.encoderCache, unsafe.Pointer(&map[string]RootEncoder{}))
+	api := &frozenConfig{
+		readonlyDecode: cfg.ReadonlyDecode,
+		decoderCache:   &sync.Map{},
+		encoderCache:   &sync.Map{},
+	}
 	return api
 }
 

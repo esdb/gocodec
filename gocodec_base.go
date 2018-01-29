@@ -2,6 +2,7 @@ package gocodec
 
 import (
 	"reflect"
+	"unsafe"
 )
 
 type BaseCodec struct {
@@ -48,5 +49,5 @@ func (codec *NoopCodec) IsNoop() bool {
 func (codec *NoopCodec) Decode(iter *Iterator) {
 }
 
-func (codec *NoopCodec) Encode(stream *Stream) {
+func (codec *NoopCodec) Encode(ptr unsafe.Pointer, stream *Stream) {
 }

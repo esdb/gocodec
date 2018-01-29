@@ -1,5 +1,7 @@
 package gocodec
 
+import "unsafe"
+
 type structEncoder struct {
 	BaseCodec
 	fields []structFieldEncoder
@@ -10,12 +12,12 @@ type structFieldEncoder struct {
 	encoder ValEncoder
 }
 
-func (encoder *structEncoder) Encode(stream *Stream) {
-	baseCursor := stream.cursor
-	for _, field := range encoder.fields {
-		stream.cursor = baseCursor + field.offset
-		field.encoder.Encode(stream)
-	}
+func (encoder *structEncoder) Encode(prStruct unsafe.Pointer, stream *Stream) {
+	//baseCursor := stream.cursor
+	//for _, field := range encoder.fields {
+	//	stream.cursor = baseCursor + field.offset
+	//	field.encoder.Encode(stream)
+	//}
 }
 
 type structDecoderWithoutPointer struct {
