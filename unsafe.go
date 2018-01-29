@@ -10,8 +10,8 @@ type emptyInterface struct {
 	word unsafe.Pointer
 }
 
-type stringHeader struct {
-	Data unsafe.Pointer
+type stringWritableHeader struct {
+	Data uintptr
 	Len  int
 }
 
